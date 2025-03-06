@@ -1,0 +1,60 @@
+{
+  "originHash" : "d1b386c23193502f98f4385f53b16380fc195ec04d0b6f1fbb6c2052d8ffc4d3",
+  "pins" : [
+    {
+      "identity" : "efqrcode",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/EFPrefix/EFQRCode.git",
+      "state" : {
+        "revision" : "3a6c5012f1a0df404a92e55bb01b4b685ff5a2d1",
+        "version" : "6.2.2"
+      }
+    },
+    {
+      "identity" : "networkimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/NetworkImage",
+      "state" : {
+        "revision" : "2849f5323265386e200484b0d0f896e73c3411b9",
+        "version" : "6.0.1"
+      }
+    },
+    {
+      "identity" : "sdwebimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SDWebImage/SDWebImage.git",
+      "state" : {
+        "revision" : "10d06f6a33bafae8c164fbfd1f03391f6d4692b3",
+        "version" : "5.20.0"
+      }
+    },
+    {
+      "identity" : "swift-cmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-cmark",
+      "state" : {
+        "revision" : "3ccff77b2dc5b96b77db3da0d68d28068593fa53",
+        "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "swift-markdown-ui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/swift-markdown-ui.git",
+      "state" : {
+        "revision" : "5f613358148239d0292c0cef674a3c2314737f9e",
+        "version" : "2.4.1"
+      }
+    },
+    {
+      "identity" : "swift_qrcodejs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/EFPrefix/swift_qrcodejs.git",
+      "state" : {
+        "revision" : "817ba220a2eba840bae888e7eeb11207bec05f8c",
+        "version" : "2.3.0"
+      }
+    }
+  ],
+  "version" : 3
+}

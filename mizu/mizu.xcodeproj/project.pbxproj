@@ -1,0 +1,643 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		049E15EF2D739B9900BE1707 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 049E15EE2D739B9900BE1707 /* MarkdownUI */; };
+		04AF4AE92D532A82001F68AD /* EFQRCode in Frameworks */ = {isa = PBXBuildFile; productRef = 04AF4AE82D532A82001F68AD /* EFQRCode */; };
+		04C38B5E2D4373630029E78E /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 04C38B5D2D4373630029E78E /* SDWebImageSwiftUI */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		048BC1E22D425FF200362605 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 048BC1C32D425FF000362605 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 048BC1CE2D425FF100362605;
+			remoteInfo = "mizu Watch App";
+		};
+		048BC1EC2D425FF200362605 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 048BC1C32D425FF000362605 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 048BC1CE2D425FF100362605;
+			remoteInfo = "mizu Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		04045F272D570BB6000D7C47 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.2.sdk/System/Library/Frameworks/AVKit.framework; sourceTree = DEVELOPER_DIR; };
+		048BC1CF2D425FF100362605 /* mizu Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "mizu Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		048BC1E12D425FF200362605 /* mizu Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "mizu Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		048BC1EB2D425FF200362605 /* mizu Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "mizu Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		048BC1D32D425FF100362605 /* mizu Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "mizu Watch App";
+			sourceTree = "<group>";
+		};
+		048BC1E42D425FF200362605 /* mizu Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "mizu Watch AppTests";
+			sourceTree = "<group>";
+		};
+		048BC1EE2D425FF200362605 /* mizu Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "mizu Watch AppUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		048BC1CC2D425FF100362605 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				049E15EF2D739B9900BE1707 /* MarkdownUI in Frameworks */,
+				04C38B5E2D4373630029E78E /* SDWebImageSwiftUI in Frameworks */,
+				04AF4AE92D532A82001F68AD /* EFQRCode in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		048BC1DE2D425FF200362605 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		048BC1E82D425FF200362605 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		048BC1C22D425FF000362605 = {
+			isa = PBXGroup;
+			children = (
+				048BC1D32D425FF100362605 /* mizu Watch App */,
+				048BC1E42D425FF200362605 /* mizu Watch AppTests */,
+				048BC1EE2D425FF200362605 /* mizu Watch AppUITests */,
+				04AF4ADD2D5310F1001F68AD /* Frameworks */,
+				048BC1CA2D425FF100362605 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		048BC1CA2D425FF100362605 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				048BC1CF2D425FF100362605 /* mizu Watch App.app */,
+				048BC1E12D425FF200362605 /* mizu Watch AppTests.xctest */,
+				048BC1EB2D425FF200362605 /* mizu Watch AppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		04AF4ADD2D5310F1001F68AD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				04045F272D570BB6000D7C47 /* AVKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		048BC1CE2D425FF100362605 /* mizu Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 048BC1F52D425FF200362605 /* Build configuration list for PBXNativeTarget "mizu Watch App" */;
+			buildPhases = (
+				048BC1CB2D425FF100362605 /* Sources */,
+				048BC1CC2D425FF100362605 /* Frameworks */,
+				048BC1CD2D425FF100362605 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				048BC1D32D425FF100362605 /* mizu Watch App */,
+			);
+			name = "mizu Watch App";
+			packageProductDependencies = (
+				04C38B5D2D4373630029E78E /* SDWebImageSwiftUI */,
+				04AF4AE82D532A82001F68AD /* EFQRCode */,
+				049E15EE2D739B9900BE1707 /* MarkdownUI */,
+			);
+			productName = "mizu Watch App";
+			productReference = 048BC1CF2D425FF100362605 /* mizu Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		048BC1E02D425FF200362605 /* mizu Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 048BC1FC2D425FF200362605 /* Build configuration list for PBXNativeTarget "mizu Watch AppTests" */;
+			buildPhases = (
+				048BC1DD2D425FF200362605 /* Sources */,
+				048BC1DE2D425FF200362605 /* Frameworks */,
+				048BC1DF2D425FF200362605 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				048BC1E32D425FF200362605 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				048BC1E42D425FF200362605 /* mizu Watch AppTests */,
+			);
+			name = "mizu Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "mizu Watch AppTests";
+			productReference = 048BC1E12D425FF200362605 /* mizu Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		048BC1EA2D425FF200362605 /* mizu Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 048BC1FF2D425FF200362605 /* Build configuration list for PBXNativeTarget "mizu Watch AppUITests" */;
+			buildPhases = (
+				048BC1E72D425FF200362605 /* Sources */,
+				048BC1E82D425FF200362605 /* Frameworks */,
+				048BC1E92D425FF200362605 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				048BC1ED2D425FF200362605 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				048BC1EE2D425FF200362605 /* mizu Watch AppUITests */,
+			);
+			name = "mizu Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "mizu Watch AppUITests";
+			productReference = 048BC1EB2D425FF200362605 /* mizu Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		048BC1C32D425FF000362605 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					048BC1CE2D425FF100362605 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					048BC1E02D425FF200362605 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 048BC1CE2D425FF100362605;
+					};
+					048BC1EA2D425FF200362605 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 048BC1CE2D425FF100362605;
+					};
+				};
+			};
+			buildConfigurationList = 048BC1C62D425FF000362605 /* Build configuration list for PBXProject "mizu" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 048BC1C22D425FF000362605;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				04C38B5C2D4372B60029E78E /* XCLocalSwiftPackageReference "../packages/SDWebImageSwiftUI-master" */,
+				04AF4AE72D532A1B001F68AD /* XCRemoteSwiftPackageReference "EFQRCode" */,
+				049E15ED2D739B9900BE1707 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 048BC1CA2D425FF100362605 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				048BC1CE2D425FF100362605 /* mizu Watch App */,
+				048BC1E02D425FF200362605 /* mizu Watch AppTests */,
+				048BC1EA2D425FF200362605 /* mizu Watch AppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		048BC1CD2D425FF100362605 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		048BC1DF2D425FF200362605 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		048BC1E92D425FF200362605 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		048BC1CB2D425FF100362605 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		048BC1DD2D425FF200362605 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		048BC1E72D425FF200362605 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		048BC1E32D425FF200362605 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 048BC1CE2D425FF100362605 /* mizu Watch App */;
+			targetProxy = 048BC1E22D425FF200362605 /* PBXContainerItemProxy */;
+		};
+		048BC1ED2D425FF200362605 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 048BC1CE2D425FF100362605 /* mizu Watch App */;
+			targetProxy = 048BC1EC2D425FF200362605 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		048BC1F32D425FF200362605 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		048BC1F42D425FF200362605 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		048BC1F62D425FF200362605 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"mizu Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = XV4SMAXZP4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = mizu;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = lengcindy.mizu;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		048BC1F72D425FF200362605 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"mizu Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = XV4SMAXZP4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = mizu;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = lengcindy.mizu;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		048BC1FD2D425FF200362605 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XV4SMAXZP4;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "lengcindy.mizu-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mizu Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/mizu Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.2;
+			};
+			name = Debug;
+		};
+		048BC1FE2D425FF200362605 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XV4SMAXZP4;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "lengcindy.mizu-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mizu Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/mizu Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.2;
+			};
+			name = Release;
+		};
+		048BC2002D425FF200362605 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XV4SMAXZP4;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "lengcindy.mizu-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "mizu Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.2;
+			};
+			name = Debug;
+		};
+		048BC2012D425FF200362605 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XV4SMAXZP4;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "lengcindy.mizu-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "mizu Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.2;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		048BC1C62D425FF000362605 /* Build configuration list for PBXProject "mizu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				048BC1F32D425FF200362605 /* Debug */,
+				048BC1F42D425FF200362605 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		048BC1F52D425FF200362605 /* Build configuration list for PBXNativeTarget "mizu Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				048BC1F62D425FF200362605 /* Debug */,
+				048BC1F72D425FF200362605 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		048BC1FC2D425FF200362605 /* Build configuration list for PBXNativeTarget "mizu Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				048BC1FD2D425FF200362605 /* Debug */,
+				048BC1FE2D425FF200362605 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		048BC1FF2D425FF200362605 /* Build configuration list for PBXNativeTarget "mizu Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				048BC2002D425FF200362605 /* Debug */,
+				048BC2012D425FF200362605 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		04C38B5C2D4372B60029E78E /* XCLocalSwiftPackageReference "../packages/SDWebImageSwiftUI-master" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../packages/SDWebImageSwiftUI-master";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		049E15ED2D739B9900BE1707 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		04AF4AE72D532A1B001F68AD /* XCRemoteSwiftPackageReference "EFQRCode" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/EFPrefix/EFQRCode.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.2.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		049E15EE2D739B9900BE1707 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 049E15ED2D739B9900BE1707 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		04AF4AE82D532A82001F68AD /* EFQRCode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 04AF4AE72D532A1B001F68AD /* XCRemoteSwiftPackageReference "EFQRCode" */;
+			productName = EFQRCode;
+		};
+		04C38B5D2D4373630029E78E /* SDWebImageSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SDWebImageSwiftUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 048BC1C32D425FF000362605 /* Project object */;
+}

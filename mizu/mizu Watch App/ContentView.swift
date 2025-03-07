@@ -311,20 +311,18 @@ struct Index: View {
     var body: some View {
         ZStack{
             ScrollView {
+                if downloadManager.isDownloading == true{
+                    DownloadView()
+                    .buttonStyle(PlainButtonStyle())
+                    SmallDivider()
+                }
                 LazyVStack {
-                    if downloadManager.isDownloading == true{
-                        NavigationLink(destination: DownloadView()) {
-                            DownloadView()
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        SmallDivider()
-                    }
                     ForEach(videos) { video in
                         NavigationLink(destination: VideoDetailIndex(video: video)) {
                             VideoRow(video: video)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .frame(width:150)
+                        .frame(maxWidth:200,minHeight: 150)
                         .overlay(
                             RoundedRectangle(cornerRadius: 5)
                                 .stroke(Color.white, lineWidth: 3)
@@ -420,12 +418,13 @@ struct ToastView: View {
 struct SmallDivider: View {
     var color: Color = .gray
     var width: CGFloat? = nil  // 可选：如果想要指定宽度，否则会自动填满父视图
-    var height: CGFloat = 1    // 分割线高度
-    var verticalPadding: CGFloat = 8  // 上下间距
+    var height: CGFloat = 3    // 分割线高度
+    var verticalPadding: CGFloat = 4  // 上下间距
 
     var body: some View {
         Rectangle()
             .fill(color)
+            .cornerRadius(4)
             .frame(width: width, height: height)
             .padding(.vertical, verticalPadding)
     }
@@ -436,15 +435,23 @@ struct VideoRow: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
-                .resizable()
-                .indicator(.activity)
-                .scaledToFit()
-                .padding()
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke(Color.gray, lineWidth: 3)
-                )
+            if let picurl = URL(string: video.pic.replacingOccurrences(of: "http", with: "https")){
+                WebImage(url: picurl)
+                    .resizable()
+                    .indicator(.activity)
+                    .scaledToFit()
+                    .padding()
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5)
+                            .stroke(Color.gray, lineWidth: 3)
+                    )
+            } else {
+                Text("图片无法加载")
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5)
+                            .stroke(Color.gray, lineWidth: 3)
+                    )
+            }
             
             Text(video.title)
                 .font(.headline)
@@ -467,127 +474,138 @@ struct VideoDetail: View {
     @State private var playerURL: URL?
 
     var body: some View {
-        ZStack {
-            let showToast = downloadManager.showToast
-            ZStack{
-                if showToast {
-                    VStack {
-                        Spacer()
-                        ToastView(message: "已添加到资料库")
-                            .padding()
-                            .cornerRadius(10)
-                            .shadow(radius: 10)
-                            .transition(.move(edge: .bottom))
-                            .animation(.easeInOut, value: showToast)
+            ZStack {
+                let showToast = downloadManager.showToast
+                ZStack{
+                    if showToast {
+                        VStack {
+                            Spacer()
+                            ToastView(message: "已添加到资料库")
+                                .padding()
+                                .cornerRadius(10)
+                                .shadow(radius: 10)
+                                .transition(.move(edge: .bottom))
+                                .animation(.easeInOut, value: showToast)
+                        }
+                        .padding(.bottom, 20)
                     }
-                    .padding(.bottom, 20)
                 }
-            }
-            .zIndex(1)
-            .padding()
-            ZStack{
-                VStack{
-                    Spacer()
+                .zIndex(1)
+                .padding()
+                ZStack{
                     DownloadView()
                         .shadow(radius: 10)
                 }
-                .padding(.bottom, 0)
-            }
-            .zIndex(1)
-            .padding()
-            ScrollView {
+                .zIndex(1)
+                
+                Text(video.title)
+                    .foregroundStyle(Color.blue.opacity(0.4))
+                    .font(.system(size: 30))
+                    .bold()
                 ZStack{
-                    Text(video.title)
-                        .foregroundStyle(Color.blue.opacity(0.2))
-                        .font(.system(size: 50))
-                        .bold()
-                    VStack{
-                        VStack(spacing: 16) {
-                            NavigationLink(destination: ViewPicture(PicUrl: video.pic.replacingOccurrences(of: "http", with: "https"))) {
-                                WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
-                                    .resizable()
-                                    .indicator(.activity)
-                                    .scaledToFit()
-                                    .padding()
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 5)
-                                            .stroke(Color.gray, lineWidth: 3)
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            SmallDivider()
-                            Text(video.title)
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                            
-                            HStack {
-                                WebImage(url: URL(string: video.owner.face))
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 50, height: 50)
-                                    .clipShape(Circle())
-                                
-                                Text(video.owner.name)
-                                    .font(.headline)
-                                    .padding(.leading, 8)
-                                
-                                Spacer()
-                            }
-                            .padding(.horizontal)
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("播放量：\(video.stat.view)")
-                                Text("点赞数：\(video.stat.like)")
-                                Text("bvid: \(video.bvid)")
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 20)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.blue, lineWidth: 3)
-                            )
-                            
-                            if let playerURL = playerURL{
-                                NavigationLink(destination: VideoPlayerView(videoURL: playerURL)) {
-                                    Text("播放视频")
-                                        .padding(.horizontal, 30)
-                                        .padding(.vertical, 5)
-                                        .foregroundColor(.white.opacity(0.5))
-                                        .fontWeight(.bold)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .fill(Color.orange)
+                    WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
+                        .resizable()
+                        .scaledToFill()
+                        .blur(radius: 10)
+                        .ignoresSafeArea()
+                    ZStack{
+                        Color.gray.opacity(0.6)
+                            .ignoresSafeArea()
+                        ZStack{
+                            ScrollView {
+                                VStack{
+                                    VStack(spacing: 16) {
+                                        NavigationLink(destination: ViewPicture(PicUrl: video.pic.replacingOccurrences(of: "http", with: "https"))) {
+                                            WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
+                                                .resizable()
+                                                .indicator(.activity)
+                                                .scaledToFit()
+                                                .padding()
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 5)
+                                                        .stroke(Color.pink.opacity(0.5), lineWidth: 5)
+                                                )
+                                        }
+                                        .frame(minWidth: 150,maxWidth:200)
+                                        .buttonStyle(PlainButtonStyle())
+                                        
+                                        SmallDivider()
+                                        Text(video.title)
+                                            .font(.title3)
+                                            .fontWeight(.bold)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal)
+                                        
+                                        HStack {
+                                            WebImage(url: URL(string: video.owner.face))
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 50, height: 50)
+                                                .clipShape(Circle())
+                                            
+                                            Text(video.owner.name)
+                                                .font(.headline)
+                                                .padding(.leading, 8)
+                                            
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal)
+                                        
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("播放量：\(video.stat.view)")
+                                            Text("点赞数：\(video.stat.like)")
+                                            Text("bvid: \(video.bvid)")
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.vertical, 20)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.blue, lineWidth: 3)
                                         )
+                                        
+                                        if let playerURL = playerURL{
+                                            NavigationLink(destination: VideoPlayerView(videoURL: playerURL)) {
+                                                Text("播放视频")
+                                                    .padding(.horizontal, 50)
+                                                    .padding(.vertical, 10)
+                                                    .foregroundColor(.white)
+                                                    .fontWeight(.bold)
+                                                    .background(
+                                                        RoundedRectangle(cornerRadius: 20)
+                                                            .fill(Color.orange.opacity(0.5))
+                                                    )
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                            
+                                            Button(action: {
+                                                detectVideoIDType(video.bvid, videoName: video.title)
+                                            }) {
+                                                Text("下载视频")
+                                                    .padding(.horizontal, 50)
+                                                    .padding(.vertical, 10)
+                                                    .foregroundColor(.white)
+                                                    .fontWeight(.bold)
+                                                    .background(
+                                                        RoundedRectangle(cornerRadius: 20)
+                                                            .fill(Color.blue.opacity(0.5))
+                                                    )
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                            
+                                        }
+                                    }
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                            
-                            Button(action: {
-                                detectVideoIDType(video.bvid, videoName: video.title)
-                            }) {
-                                Text("下载视频")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white)
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.blue)
-                                    )
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            
+                        }
+                        .frame(maxWidth:180)
+                        .onAppear{
+                            detectOnlineVideoIDType(video.bvid, videoName: video.title){ videoURL in
+                                if let videoURL = videoURL{
+                                    print(videoURL)
+                                    self.playerURL = videoURL
                             }
                         }
                     }
-                }
-            }
-        }.onAppear{
-            detectOnlineVideoIDType(video.bvid, videoName: video.title){ videoURL in
-                if let videoURL = videoURL{
-                    print(videoURL)
-                    self.playerURL = videoURL
                 }
             }
         }
@@ -598,19 +616,18 @@ struct VideoDetailIndex: View {
     @StateObject var consoleManager = ConsoleManager()
     let video: VideoData
     
+    
     var body: some View {
         TabView {
             VideoDetail(video: video, consoleManager: consoleManager)
-            .tabItem {
-                Label("首页", systemImage: "message")
-            }
-            
-
+                .tabItem {
+                    Label("首页", systemImage: "message")
+                }
             ConsoleView(consoleManager: consoleManager)
-
-            .tabItem {
-                Label("日志", systemImage: "terminal")
-            }
+                .tabItem {
+                    Label("日志", systemImage: "terminal")
+                }
+                .toolbar(.hidden, for: .navigationBar)
         }
         .onAppear {
             DownloadManager.shared.consoleManager = consoleManager
@@ -878,7 +895,7 @@ struct SearchResultRow: View {
     var body: some View {
         VStack(alignment: .leading) {
             if let pic = video.pic{
-                let faceURL = "https:\(String(describing: video.pic ?? ""))"
+                let faceURL = "https:\(String(describing: pic))"
                 WebImage(url: URL(string: faceURL))
                     .resizable()
                     .indicator(.activity)
@@ -1544,18 +1561,23 @@ struct DownloadView: View {
             if downloadManager.isDownloading == true {
                 VStack{
                     Text("下载视频：\(downloadManager.videoName)")
+                        .font(.footnote)
                         .fontWeight(.bold)
                     ProgressView(value: downloadManager.downloadProgress)
                         .progressViewStyle(LinearProgressViewStyle())
                         .frame(width: 150)
                     Text("下载进度: \(Int(downloadManager.downloadProgress * 100))%")
                         .fontWeight(.bold)
+                        .font(.footnote)
                 }
+                .padding(.vertical,5)
+                .padding(.horizontal,5)
                 .background(Color.black.opacity(0.3))
                 .cornerRadius(10)
             }
             
         }
+        .frame(maxWidth:100)
         .padding()
     }
 }

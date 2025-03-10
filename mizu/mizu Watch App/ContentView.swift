@@ -185,6 +185,8 @@ struct MySelf: View{
 
 // MARK: - 主视图
 struct ContentView: View {
+    @ObservedObject var playerManager = GlobalMusicPlayer.shared  // 监听全局播放器
+    
     var body: some View {
         ZStack{
             Color.white.opacity(0.5)
@@ -212,6 +214,20 @@ struct ContentView: View {
                                 .foregroundColor(Color.orange)
                         }
                         ScrollView{
+                            if let oldPlayer = playerManager.currentPlayer{
+                                NavigationLink(destination: NowPlayingView()) {
+                                    Text("正在播放")
+                                        .padding(.horizontal, 30)
+                                        .padding(.vertical, 5)
+                                        .foregroundColor(.white.opacity(0.5))
+                                        .fontWeight(.bold)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .fill(Color.red.opacity(0.6))
+                                        )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
                             NavigationLink(destination: Index()) {
                                 Text("进入首页")
                                     .padding(.horizontal, 30)
@@ -520,7 +536,9 @@ struct VideoDetail: View {
                                                 .resizable()
                                                 .indicator(.activity)
                                                 .scaledToFit()
-                                                .padding()
+                                                .frame(minWidth: 140,maxWidth:180)
+                                                .padding(.horizontal,2)
+                                                .padding(.vertical,2)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 5)
                                                         .stroke(Color.pink.opacity(0.5), lineWidth: 5)
@@ -528,7 +546,7 @@ struct VideoDetail: View {
                                         }
                                         .frame(minWidth: 150,maxWidth:200)
                                         .buttonStyle(PlainButtonStyle())
-                                        
+
                                         SmallDivider()
                                         Text(video.title)
                                             .font(.title3)
@@ -546,7 +564,6 @@ struct VideoDetail: View {
                                             Text(video.owner.name)
                                                 .font(.headline)
                                                 .padding(.leading, 8)
-                                            
                                             Spacer()
                                         }
                                         .padding(.horizontal)
@@ -739,7 +756,7 @@ struct ViewQrcode: View {
         }
         .digitalCrownRotation($zoom,
                               from: 1.0,
-                              through: 5.0,
+                              through: 10.0,
                               by: 0.1,
                               sensitivity: .medium,
                               isContinuous: false,
@@ -1585,6 +1602,7 @@ struct DownloadView: View {
 // MARK: - 本地文件
 struct VideoListView: View {
     @State private var videos: [URL] = []
+    @State private var showMusicPlayer = false  // 控制导航状态
 
     var body: some View {
         List {
@@ -1593,10 +1611,27 @@ struct VideoListView: View {
                     Text(video.lastPathComponent)
                         .fontWeight(.bold)
                 }
+                .swipeActions(edge: .leading) {
+                    Button {
+                        // 点击按钮时，触发导航跳转到 VideoMusicPlayerView
+                        showMusicPlayer = true
+                    } label: {
+                        Label("听视频", systemImage: "speaker.wave.2.fill")
+                    }
+                    .tint(.blue)
+                }
             }
             .onDelete(perform: deleteVideo)
         }
         .onAppear(perform: loadVideos)
+        .navigationTitle("视频列表")
+        // 隐藏的导航链接，通过状态变量触发跳转
+        .background(
+            NavigationLink(destination: VideoMusicPlayerView(videos: videos),
+                           isActive: $showMusicPlayer,
+                           label: { EmptyView() })
+            .hidden()
+        )
     }
 
     /// 加载 `Documents` 目录中的视频文件
@@ -1632,6 +1667,232 @@ struct VideoListView: View {
     }
 }
 
+func setupAudioSession() {
+    do {
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+        try AVAudioSession.sharedInstance().setActive(true)
+    } catch {
+        print("Audio session setup failed: \(error)")
+    }
+}
+
+class GlobalMusicPlayer: ObservableObject {
+    static let shared = GlobalMusicPlayer()
+
+    @Published var currentPlayer: AVQueuePlayer? {
+        didSet {
+            // 监听播放状态，确保 UI 能实时更新
+            setupPlayerObservers()
+        }
+    }
+
+    private var timeObserverToken: Any?
+    private var cancellables: Set<AnyCancellable> = []
+
+    private init() {}
+
+    private func setupPlayerObservers() {
+        guard let player = currentPlayer else { return }
+
+        // 监听播放器状态
+        player.publisher(for: \.timeControlStatus)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()  // 触发 SwiftUI 视图更新
+            }
+            .store(in: &cancellables)
+
+        // 监听时间进度（可选）
+        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { _ in
+            self.objectWillChange.send()  // 触发 SwiftUI 视图更新
+        }
+    }
+}
+
+struct VideoMusicPlayerView: View {
+    @State private var player: AVQueuePlayer = AVQueuePlayer()
+    var videos: [URL] // 传入待播放视频的 URL 数组
+    
+    // 当前播放进度和总时长（秒）
+    @State private var currentTime: Double = 0
+    @State private var duration: Double = 1  // 初始值设为1，避免除零
+    @State private var isPlaying: Bool = false
+    @State private var timeObserverToken: Any?
+
+    var body: some View {
+        VStack(spacing: 10) {
+            // 进度条显示播放进度，并允许用户拖动以调整进度
+            Slider(value: Binding(
+                get: {
+                    self.currentTime
+                },
+                set: { newValue in
+                    self.currentTime = newValue
+                    // 当用户拖动进度条时，进行跳转
+                    player.seek(to: CMTime(seconds: newValue, preferredTimescale: 600))
+                }
+            ), in: 0...duration)
+            .padding(.horizontal)
+
+            // 显示当前播放时间与总时长
+            HStack {
+                Text(formatTime(currentTime))
+                Spacer()
+                Text(formatTime(duration))
+            }
+            .padding(.horizontal)
+
+            // 播放控制按钮：上一曲、播放/暂停、下一曲
+            HStack(spacing: 20) {
+                Button(action: {
+                    if isPlaying {
+                        player.pause()
+                        isPlaying = false
+                    } else {
+                        player.play()
+                        isPlaying = true
+                    }
+                }) {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.largeTitle)
+                }.buttonStyle(PlainButtonStyle())
+            }
+        }
+        .onAppear {
+            if let oldPlayer = GlobalMusicPlayer.shared.currentPlayer, oldPlayer != player {
+                oldPlayer.pause()
+            }
+            setupAudioSession()
+            GlobalMusicPlayer.shared.currentPlayer = player
+            // 将视频文件作为 AVPlayerItem 添加到队列中
+            let items = videos.map { AVPlayerItem(url: $0) }
+            items.forEach { player.insert($0, after: nil) }
+            
+            // 如果当前项存在，则获取其时长
+            if let currentItem = player.currentItem {
+                self.duration = currentItem.asset.duration.seconds
+            }
+            
+            // 添加周期性观察者更新播放进度
+            let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+            timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+                self.currentTime = time.seconds
+                if let currentItem = player.currentItem {
+                    self.duration = currentItem.asset.duration.seconds
+                }
+            }
+            
+            player.play()
+            isPlaying = true
+        }
+        .onDisappear {
+            // 移除观察者
+            if let token = timeObserverToken {
+                player.removeTimeObserver(token)
+                timeObserverToken = nil
+            }
+        }
+    }
+    
+    // 将秒数转换成 mm:ss 格式字符串
+    private func formatTime(_ seconds: Double) -> String {
+        let minutes = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%02d:%02d", minutes, secs)
+    }
+}
+
+struct NowPlayingView: View {
+    @ObservedObject var playerManager = GlobalMusicPlayer.shared  // 监听全局播放器
+    @State private var currentTime: Double = 0
+    @State private var duration: Double = 1  // 避免除 0
+    @State private var timeObserverToken: Any?
+    @State private var isPlaying: Bool = false
+    @State private var videoTitle: String = "未知视频"
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(videoTitle)
+                .font(.headline)
+                .padding()
+
+            // 播放进度条
+            Slider(value: Binding(
+                get: { self.currentTime },
+                set: { newValue in
+                    self.currentTime = newValue
+                    playerManager.currentPlayer?.seek(to: CMTime(seconds: newValue, preferredTimescale: 600))
+                }
+            ), in: 0...duration)
+            .padding(.horizontal)
+
+            // 时间显示
+            HStack {
+                Text(formatTime(currentTime))
+                Spacer()
+                Text(formatTime(duration))
+            }
+            .padding(.horizontal)
+
+            // 播放/暂停按钮
+            Button(action: {
+                if isPlaying {
+                    playerManager.currentPlayer?.pause()
+                } else {
+                    playerManager.currentPlayer?.play()
+                }
+                isPlaying.toggle()
+            }) {
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.largeTitle)
+            }
+            .buttonStyle(PlainButtonStyle())
+
+        }
+        .onAppear {
+            setupPlayer()
+        }
+        .onDisappear {
+            if let token = timeObserverToken {
+                playerManager.currentPlayer?.removeTimeObserver(token)
+                timeObserverToken = nil
+            }
+        }
+    }
+
+    private func setupPlayer() {
+        guard let player = playerManager.currentPlayer else { return }
+
+        // 获取当前播放项的标题（如果有）
+        if let currentItem = player.currentItem?.asset as? AVURLAsset {
+            videoTitle = currentItem.url.lastPathComponent
+        }
+
+        // 设置总时长
+        if let currentItem = player.currentItem {
+            duration = currentItem.asset.duration.seconds
+        }
+
+        // 添加时间观察者
+        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+            self.currentTime = time.seconds
+            if let currentItem = player.currentItem {
+                self.duration = currentItem.asset.duration.seconds
+            }
+        }
+
+        isPlaying = player.timeControlStatus == .playing
+    }
+
+    // 时间格式化 mm:ss
+    private func formatTime(_ seconds: Double) -> String {
+        let minutes = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%02d:%02d", minutes, secs)
+    }
+}
+
 struct VideoPlayerView: View {
     let videoURL: URL
     @State private var isLandscape = false      // 控制视频是否旋转（横屏效果）
@@ -1639,25 +1900,34 @@ struct VideoPlayerView: View {
     @State private var player = AVPlayer()        // 播放器实例
     @Environment(\.presentationMode) var presentationMode  // 用于退出页面
     let headers = [
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
-            "Referer": "https://www.bilibili.com/"
-        ]
-
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+        "Referer": "https://www.bilibili.com/"
+    ]
+    
     var body: some View {
         ZStack {
             let asset = AVURLAsset(url: videoURL, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
             let playerItem = AVPlayerItem(asset: asset)
             // 视频播放器视图（旋转后会影响局部坐标系）
+            let width = WKInterfaceDevice.current().screenBounds.width
+            let height = WKInterfaceDevice.current().screenBounds.height
             VideoPlayer(player: player)
+                .ignoresSafeArea()
                 .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
-                .animation(.easeInOut, value: isLandscape)
-                .edgesIgnoringSafeArea(.all)
+                .aspectRatio(contentMode: .fill)
+                .position(x: width / 2, y: height / 2)
+                .clipped()
+                .frame(
+                    width: WKInterfaceDevice.current().screenBounds.width,
+                    height: WKInterfaceDevice.current().screenBounds.height
+                )
                 .onAppear {
                     player = AVPlayer(url: videoURL)
                     player.replaceCurrentItem(with: playerItem)
                     player.play()
                 }
-                // 手势直接绑定在 VideoPlayer 上，方向判断根据当前旋转状态不同
+            
+            // 手势直接绑定在 VideoPlayer 上，方向判断根据当前旋转状态不同
                 .gesture(
                     DragGesture(minimumDistance: 20)
                         .onEnded { value in
@@ -1678,7 +1948,8 @@ struct VideoPlayerView: View {
                             }
                         }
                 )
-            
+                .navigationBarBackButtonHidden(true)
+                .ignoresSafeArea(.all)
             // 右侧（或横屏时的底部）选项菜单
             if showOptions {
                 // 使用 Group 包裹菜单视图，方便后续统一应用旋转
@@ -1705,17 +1976,17 @@ struct VideoPlayerView: View {
                     .background(Color.blue.opacity(0.8))
                     .foregroundColor(.white)
                     .cornerRadius(8)
+                    .zIndex(1)
                 }
                 // 根据是否横屏调整菜单的位置
                 .padding(isLandscape ? .bottom : .trailing, 10)
                 .padding(isLandscape ? .leading : .top, 50)
                 // 当横屏时，菜单从底部滑入；否则从右侧滑入
-                .transition(.move(edge: isLandscape ? .bottom : .trailing))
+                .transition(.move(edge: isLandscape ? .top : .leading))
                 // **关键**：当横屏时，将菜单也旋转 90°，使按钮方向与视频保持一致
                 .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
             }
         }
-        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -1740,6 +2011,7 @@ struct ChatInterfaceView: View {
     @Binding var chatHistories: [ChatHistory]
     
     @AppStorage("max_token") private var maxToken: Int = 8192
+    @AppStorage("key") private var key: String = "Bearer jJDdIZANtyPrqvMEYJql:rmXqzilYQeauESXNAUEw"
     @AppStorage("temperature") private var temperature: Double = 0.4
     @AppStorage("tok_k") private var tokK: Int = 6
     @AppStorage("system_prompt") private var systemPrompt: String = "你是约会大作战里主角的妹妹五河琴里，请依照角色语气的风格解释我的问题，首要解决问题，可以有小脾气，可以撒娇，尽量多说点话，更加贴合原著"
@@ -1877,7 +2149,8 @@ struct ChatInterfaceView: View {
         request.httpMethod = "POST"
         request.httpBody = httpBody
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer jJDdIZANtyPrqvMEYJql:rmXqzilYQeauESXNAUEw", forHTTPHeaderField: "Authorization")
+        request.addValue(key, forHTTPHeaderField: "Authorization")
+        consoleManager.addLog("key:\(key)")
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
@@ -2017,7 +2290,7 @@ struct ChatHistoryDetailView: View {
             HStack {
                 if message.role == "system" || message.role == "assistant" {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(message.role == "system" ? "设定" : "琴里")
+                        Text(message.role == "system" ? "设定" : "AI")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(message.role == "system" ? .pink : .green)
@@ -2060,6 +2333,7 @@ struct SettingsView: View {
     @AppStorage("max_token") private var maxToken: Int = 8192
     @AppStorage("temperature") private var temperature: Double = 0.4
     @AppStorage("tok_k") private var tokK: Int = 6
+    @AppStorage("key") private var key: String = "Bearer jJDdIZANtyPrqvMEYJql:rmXqzilYQeauESXNAUEw"
     @AppStorage("system_prompt") private var systemPrompt: String = "你是约会大作战里主角的妹妹五河琴里，请依照角色语气的风格解释我的问题，首要解决问题，可以有小脾气，可以撒娇，尽量多说点话，更加贴合原著"
     
     var body: some View {
@@ -2097,12 +2371,32 @@ struct SettingsView: View {
                 }
                 .foregroundColor(.red)
             }
+            
+            Section(header: Text("用户key")) {
+                // watchOS 不支持 TextEditor，改为使用 NavigationLink 进入编辑页面
+                NavigationLink(destination: EditPromptView(prompt: $key)) {
+                    VStack(alignment: .leading) {
+                        Text("编辑key")
+                        Text(key)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                Button("使用开发者key（这不好好支持支持）") {
+                    resetKey()
+                }
+                .foregroundColor(.green.opacity(0.8))
+            }
         }
         .navigationTitle("设置")
     }
     
     private func resetPrompt() {
         systemPrompt = "你是约会大作战里主角的妹妹五河琴里，请依照角色语气的风格解释我的问题，首要解决问题，可以有小脾气，可以撒娇，尽量多说点话，更加贴合原著"
+    }
+    private func resetKey() {
+        key = "Bearer jJDdIZANtyPrqvMEYJql:rmXqzilYQeauESXNAUEw"
     }
 }
 
@@ -2111,23 +2405,21 @@ struct EditPromptView: View {
     @Binding var prompt: String
     
     var body: some View {
-        VStack {
-            TextField("提示词", text: $prompt)
-                .font(.footnote)
-                .padding()
-            Spacer()
-            ScrollView{
-                Section(header: Text("提示词")){
-                    Text(prompt)
-                        .font(.footnote)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                }
+        ScrollView{
+            VStack {
+                TextField("请输入文本", text: $prompt)
+                    .font(.footnote)
+                    .padding()
+                Spacer()
+                Text(prompt)
+                    .font(.footnote)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
             }
+            .navigationTitle("编辑器")
         }
-        .navigationTitle("编辑提示词")
     }
 }
 
@@ -2145,17 +2437,17 @@ struct Ai: View {
             }
             
             NavigationView {
-                ChatHistoryListView(chatHistories: $chatHistories)
-            }.toolbar(.hidden, for: .navigationBar)
-            .tabItem {
-                Label("历史", systemImage: "clock")
-            }
-            
-            NavigationView {
                 ConsoleView(consoleManager: consoleManager)
             }.toolbar(.hidden, for: .navigationBar)
             .tabItem {
                 Label("日志", systemImage: "terminal")
+            }
+            
+            NavigationView {
+                ChatHistoryListView(chatHistories: $chatHistories)
+            }.toolbar(.hidden, for: .navigationBar)
+            .tabItem {
+                Label("历史", systemImage: "clock")
             }
             
             NavigationView {
@@ -2191,7 +2483,7 @@ struct ConsoleView: View {
                 .font(.title3)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.trailing)
-                .padding()
+                .padding(.horizontal,10)
             
             ScrollView {
                 ForEach(consoleManager.logs, id: \.self) { log in
@@ -2202,7 +2494,7 @@ struct ConsoleView: View {
                 }
             }
             .padding()
-            .frame(height: 150)
+            .frame(height: 180)
         }
     }
 }

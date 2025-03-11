@@ -337,6 +337,9 @@ struct Index: View {
                         NavigationLink(destination: VideoDetailIndex(video: video)) {
                             VideoRow(video: video)
                         }
+                        .onDisappear {
+                            SDImageCache.shared.clearMemory()
+                        }
                         .buttonStyle(PlainButtonStyle())
                         .frame(maxWidth:200,minHeight: 150)
                         .overlay(
@@ -366,6 +369,10 @@ struct Index: View {
             }
             .onAppear {
                 if videos.isEmpty { fetchVideos() }
+                
+                let imageCache = SDImageCache.shared
+                imageCache.config.maxMemoryCost = 400 * 1024 * 1024  // 例如设置为 400M
+                imageCache.config.maxMemoryCount = 4  // 限制最大缓存图片数量/
             }
         }
     }
@@ -837,6 +844,9 @@ struct VideoSearch: View {
                                 NavigationLink(destination: VideoSearchDetialIndex(video: video)) {
                                 SearchResultRow(video: video)
                             }
+                            .onDisappear {
+                                    SDImageCache.shared.clearMemory()
+                            }
                             .buttonStyle(PlainButtonStyle())
                             .padding(.vertical, 10)
                             .padding(.horizontal,5)
@@ -847,6 +857,11 @@ struct VideoSearch: View {
                         }
                     }
                 }
+            }
+            .onAppear {
+                let imageCache = SDImageCache.shared
+                imageCache.config.maxMemoryCost = 400 * 1024 * 1024  // 例如设置为 400M
+                imageCache.config.maxMemoryCount = 4  // 限制最大缓存图片数量/
             }
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -1610,6 +1625,12 @@ struct VideoListView: View {
                 NavigationLink(destination: VideoPlayerView(videoURL: video)) {
                     Text(video.lastPathComponent)
                         .fontWeight(.bold)
+                    
+                NavigationLink(destination: VideoMusicPlayerView(video: video),
+                                isActive: $showMusicPlayer,
+                                label: { EmptyView() }
+                )
+                .hidden()
                 }
                 .swipeActions(edge: .leading) {
                     Button {
@@ -1626,12 +1647,6 @@ struct VideoListView: View {
         .onAppear(perform: loadVideos)
         .navigationTitle("视频列表")
         // 隐藏的导航链接，通过状态变量触发跳转
-        .background(
-            NavigationLink(destination: VideoMusicPlayerView(videos: videos),
-                           isActive: $showMusicPlayer,
-                           label: { EmptyView() })
-            .hidden()
-        )
     }
 
     /// 加载 `Documents` 目录中的视频文件
@@ -1709,9 +1724,45 @@ class GlobalMusicPlayer: ObservableObject {
     }
 }
 
+struct VolumeControlView: View {
+    @State private var volume: Double = 0.5
+    @State private var isFocused: Bool = false
+
+    var body: some View {
+        Circle()
+            .stroke(Color.gray.opacity(0.3), lineWidth: 8)
+            .frame(width: 30, height: 30)
+            .overlay(
+                // 根据 isFocused 状态决定颜色，没聚焦时为灰色，聚焦时为蓝色
+                Circle()
+                    .trim(from: 0, to: CGFloat(volume))
+                    .stroke(isFocused ? Color.blue : Color.gray,
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            )
+            .focusable(true) { focused in
+                isFocused = focused
+            }
+            .digitalCrownRotation(
+                $volume,
+                from: 0,
+                through: 1,
+                by: 0.01,
+                sensitivity: .medium,
+                isContinuous: true,
+                isHapticFeedbackEnabled: true
+            )
+            .onChange(of: volume) { newValue in
+                // 实时更新播放器的音量
+                GlobalMusicPlayer.shared.currentPlayer?.volume = Float(newValue)
+            }
+            .padding()
+    }
+}
+
 struct VideoMusicPlayerView: View {
     @State private var player: AVQueuePlayer = AVQueuePlayer()
-    var videos: [URL] // 传入待播放视频的 URL 数组
+    var video: URL // 传入待播放视频的 URL 数组
     
     // 当前播放进度和总时长（秒）
     @State private var currentTime: Double = 0
@@ -1742,7 +1793,6 @@ struct VideoMusicPlayerView: View {
             }
             .padding(.horizontal)
 
-            // 播放控制按钮：上一曲、播放/暂停、下一曲
             HStack(spacing: 20) {
                 Button(action: {
                     if isPlaying {
@@ -1756,6 +1806,7 @@ struct VideoMusicPlayerView: View {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.largeTitle)
                 }.buttonStyle(PlainButtonStyle())
+                VolumeControlView()
             }
         }
         .onAppear {
@@ -1765,8 +1816,8 @@ struct VideoMusicPlayerView: View {
             setupAudioSession()
             GlobalMusicPlayer.shared.currentPlayer = player
             // 将视频文件作为 AVPlayerItem 添加到队列中
-            let items = videos.map { AVPlayerItem(url: $0) }
-            items.forEach { player.insert($0, after: nil) }
+            let item = AVPlayerItem(url: video)
+            player.replaceCurrentItem(with: item)
             
             // 如果当前项存在，则获取其时长
             if let currentItem = player.currentItem {
@@ -1815,7 +1866,7 @@ struct NowPlayingView: View {
             Text(videoTitle)
                 .font(.headline)
                 .padding()
-
+            
             // 播放进度条
             Slider(value: Binding(
                 get: { self.currentTime },
@@ -1825,7 +1876,7 @@ struct NowPlayingView: View {
                 }
             ), in: 0...duration)
             .padding(.horizontal)
-
+            
             // 时间显示
             HStack {
                 Text(formatTime(currentTime))
@@ -1833,21 +1884,23 @@ struct NowPlayingView: View {
                 Text(formatTime(duration))
             }
             .padding(.horizontal)
-
+            
             // 播放/暂停按钮
-            Button(action: {
-                if isPlaying {
-                    playerManager.currentPlayer?.pause()
-                } else {
-                    playerManager.currentPlayer?.play()
+            HStack{
+                Button(action: {
+                    if isPlaying {
+                        playerManager.currentPlayer?.pause()
+                    } else {
+                        playerManager.currentPlayer?.play()
+                    }
+                    isPlaying.toggle()
+                }) {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.largeTitle)
                 }
-                isPlaying.toggle()
-            }) {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.largeTitle)
+                .buttonStyle(PlainButtonStyle())
+                VolumeControlView()
             }
-            .buttonStyle(PlainButtonStyle())
-
         }
         .onAppear {
             setupPlayer()
@@ -2000,7 +2053,7 @@ struct Message: Identifiable, Codable {
 
 struct ChatHistory: Identifiable, Codable {
     var id = UUID()
-    let name: String      // 格式为 日期 - 第一条用户提问
+    let name: String      // 格式为 日期 - 第一条用户提
     let date: Date
     let messages: [Message]
 }

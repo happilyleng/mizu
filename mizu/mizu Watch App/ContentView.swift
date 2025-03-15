@@ -297,15 +297,15 @@ struct ContentView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                             
-                            NavigationLink(destination: ModelView()) {
-                                Text("furina")
+                            NavigationLink(destination: scnListView()) {
+                                Text("本地模型")
                                     .padding(.horizontal, 30)
                                     .padding(.vertical, 5)
                                     .foregroundColor(.white.opacity(0.5))
                                     .fontWeight(.bold)
                                     .background(
                                         RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.cyan.opacity(0.3))
+                                            .fill(Color.blue.opacity(0.3))
                                     )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -318,7 +318,7 @@ struct ContentView: View {
                                     .fontWeight(.bold)
                                     .background(
                                         RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.blue.opacity(0.3))
+                                            .fill(Color.purple.opacity(0.3))
                                     )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -2597,25 +2597,44 @@ class SceneCoordinator: ObservableObject {
     @Published var positionZ: Float = 30.0
     @Published var rotationY: Float = 0.0 // 摄像机旋转角度
     
+    private var lastZoom: Float = 30.0  // 记录上次 Z 轴位置
     private var lastOffsetX: Float = 0.0
     private var lastOffsetY: Float = 80.0
     
-    init() {
-        scene = SCNScene(named: "Genshin_impact_Furina.scn")!
+    init(modelname: String) {
+        scene = SCNScene(named: modelname)!
         // 查找模型节点（默认假设第一个子节点是模型）
         modelNode = scene.rootNode.childNodes.first
         
         // 添加摄像机
         cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
+        
+        // 如果有模型节点，则根据模型的位置调整摄像机的初始位置
+        if let modelNode = modelNode {
+            let modelPos = modelNode.position
+            // 例如：摄像机位于模型正上方 50 个单位，Z 轴向后 30 个单位
+            positionX = modelPos.x
+            positionY = modelPos.y + 50
+            positionZ = modelPos.z + 30
+        } else {
+            positionX = 0.0
+            positionY = 80.0
+            positionZ = 30.0
+        }
+        
+        // 更新摄像机初始位置
         cameraNode.position = SCNVector3(x: positionX, y: positionY, z: positionZ)
         scene.rootNode.addChildNode(cameraNode)
+        
+        // 同步更新偏移量，避免第一次手势出现跳动
+        lastOffsetX = positionX
+        lastOffsetY = positionY
         
         if let modelNode = modelNode {
             let keys = modelNode.animationKeys
             print("模型动画键：\(keys)")
         }
-
     }
     
     // 更新摄像机位置（X、Y 轴）
@@ -2647,40 +2666,47 @@ class SceneCoordinator: ObservableObject {
     func updateZAxis(_ z: Double) {
         positionZ = Float(z)
         cameraNode.position.z = positionZ
+        lastZoom = positionZ  // 记录当前 Z 轴位置
         print("摄像机Z轴(updateZAxis): \(positionZ)")
     }
     
     // 旋转模型（示例方法）
     func rotateModel(y angle: Float) {
-        rotationY += angle
-        modelNode?.eulerAngles.y = rotationY * (Float.pi / 180) // 转换为弧度
-        print("模型旋转: \(rotationY)°")
+        let newRotation = max(-360, min(360, angle)) // 限制范围
+        rotationY = newRotation
+        modelNode?.eulerAngles.y = rotationY * (Float.pi / 180)
     }
 }
 
 struct ModelView: View {
-    @ObservedObject var coordinator = SceneCoordinator()
+    @ObservedObject var coordinator: SceneCoordinator
+    init(modelName: String) {
+        self.coordinator = SceneCoordinator(modelname: modelName)  // 传递模型名称
+    }
+    
     @State private var isStepperFocused: Bool = false
     @State private var isRotating: Bool = false
 
     var body: some View {
         ZStack {
+            ProgressView("加载中...")
+                .padding()
             // 3D 模型视图
             SceneView(scene: coordinator.scene, options: [])
                 .edgesIgnoringSafeArea(.all)
             // TabView 中包含一个或多个交互视图
             TabView {
                 HModelView(coordinator: coordinator)
-                    .focusable(true)
                     .tabItem {
                         Label("摄像头控制", systemImage: "wand.and.stars")
                     }
                 TModelView(coordinator: coordinator)
-                    .focusable(true)
                     .tabItem{
                         Label("仰角控制", systemImage: "wand.and.stars")
                     }
                 // 其他视图可以在 TabView 中添加
+                Color.clear
+                    .toolbar(.hidden, for: .navigationBar)
             }
         }
     }
@@ -2689,6 +2715,7 @@ struct ModelView: View {
 struct HModelView: View {
     @ObservedObject var coordinator: SceneCoordinator      // 用于缩放 / Z轴控制 (范围10-50)
     @State private var zAxisControl: Double = 30  // 新增：用于调整 Z 轴 (范围10-60)
+    @FocusState private var isFocused: Bool
     
     var body: some View {
         VStack{
@@ -2699,6 +2726,7 @@ struct HModelView: View {
                 .onChange(of: zAxisControl) { newValue in
                     coordinator.updateZAxis(newValue)
                 }
+                .focused($isFocused) // 绑定焦点状态
                 .gesture(
                     DragGesture()
                         .onChanged { value in
@@ -2708,23 +2736,34 @@ struct HModelView: View {
                         }
                         .onEnded { _ in
                             coordinator.storeLastOffset()
+                            isFocused = true // 点击时重新获取焦点
                         }
                 )
-        }.navigationTitle{
-            Text("位置调整")
-                .font(.footnote)
-                .fontWeight(.bold)
-                .foregroundColor(Color.green)
+            VStack {
+                Text("摄像头控制")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.green.opacity(0.6))
+            }
+            .frame(width: 100,height: 30)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.gray, lineWidth: 1)
+            )
         }
+        .onAppear {
+            isFocused = true // 进入界面时自动聚焦
+        }
+        .focusable(true)
     }
 }
 
 struct TModelView: View {
     @ObservedObject var coordinator: SceneCoordinator
-    
+    @FocusState private var isFocused: Bool
     // 摄像头仰角控制（X轴旋转）
     @State private var cameraTilt: Float = 0.0
-    private let tiltLimit: Float = 45.0  // 限制最大仰角范围
+    private let tiltLimit: Float = 60.0  // 限制最大仰角范围
     
     // 表冠控制模型旋转（Y轴）
     @State private var rotationControl: Double = 0.0
@@ -2734,12 +2773,13 @@ struct TModelView: View {
             Color.clear
                 .focusable(true)
                 .contentShape(Rectangle())
-                // 绑定数码表冠旋转模型（范围 0° 到 360°）
-                .digitalCrownRotation($rotationControl, from: 0, through: 360, by: 1, sensitivity: .medium, isContinuous: true, isHapticFeedbackEnabled: true)
+            // 绑定数码表冠旋转模型（范围 0° 到 360°）
+                .digitalCrownRotation($rotationControl, from: -360, through: 360, by: 0.5, sensitivity: .medium, isHapticFeedbackEnabled: true)
                 .onChange(of: rotationControl) { newValue in
                     coordinator.rotateModel(y: Float(newValue))
                 }
-                // 手势调整摄像头仰角
+                .focused($isFocused) // 绑定焦点状态
+            // 手势调整摄像头仰角
                 .gesture(
                     DragGesture()
                         .onChanged { value in
@@ -2747,17 +2787,116 @@ struct TModelView: View {
                             let newTilt = max(-tiltLimit, min(tiltLimit, cameraTilt + deltaTilt))
                             cameraTilt = newTilt
                             coordinator.cameraNode.eulerAngles.x = newTilt * (Float.pi / 180) // 转弧度
+                            isFocused = true // 点击时重新获取焦点
                         }
                 )
-        }.navigationTitle{
-            Text("角度调整")
-                .font(.footnote)
-                .fontWeight(.bold)
-                .foregroundColor(Color.green)
+            VStack{
+                Text("角度控制")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.green.opacity(0.6))
+            }
+            .frame(width: 100,height: 30)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.gray, lineWidth: 1)
+            )
         }
+        .onAppear {
+            isFocused = true // 进入界面时自动聚焦
+        }
+        .focusable(true)
     }
 }
+struct scnListView: View {
+    @State private var scns: [URL] = []
 
+    var body: some View {
+        ZStack{
+            ProgressView("加载中...")
+                .padding()
+            List {
+                ForEach(scns, id: \.self) { scnName in
+                    NavigationLink(destination: ModelView(modelName: scnName.lastPathComponent)) {
+                        Text(scnName.lastPathComponent)
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+            }
+            .onAppear(perform: loadVideos)
+            .navigationTitle("模型列表")
+        }
+    }
+
+    /// 加载 `scns` 目录中的 `.scn` 文件
+    func loadVideos() {
+        let bundleURL = Bundle.main.bundleURL  // 获取主资源包路径
+        
+        let fileManager = FileManager.default
+        do {
+            // 获取 Bundle 中的所有文件和文件夹
+            let contents = try fileManager.contentsOfDirectory(at: bundleURL, includingPropertiesForKeys: nil)
+            
+            print("Bundle 中的文件和文件夹：")
+            var scnFiles: [URL] = []
+            
+            // 遍历 Bundle 中的所有文件和文件夹
+            for url in contents {
+                print(url.lastPathComponent)
+                
+                // 如果是文件夹，递归调用函数查找
+                if url.hasDirectoryPath {
+                    scnFiles.append(contentsOf: findSCNFiles(in: url))
+                } else {
+                    // 如果是文件，检查扩展名是否为 .scn
+                    if url.pathExtension.lowercased() == "scn" {
+                        scnFiles.append(url)
+                    }
+                }
+            }
+            
+            // 打印所有找到的 .scn 文件路径
+            print("找到的 SCN 文件：")
+            for scnFile in scnFiles {
+                print(scnFile.path)
+            }
+            
+            // 更新视图
+            DispatchQueue.main.async {
+                self.scns = scnFiles
+            }
+            
+        } catch {
+            print("读取 Bundle 内容出错: \(error)")
+        }
+    }
+
+    /// 递归查找指定目录下所有的 .scn 文件
+    func findSCNFiles(in directoryURL: URL) -> [URL] {
+        let fileManager = FileManager.default
+        var scnFiles: [URL] = []
+        
+        do {
+            let contents = try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
+            
+            for url in contents {
+                if url.hasDirectoryPath {
+                    // 如果是文件夹，递归查找
+                    scnFiles.append(contentsOf: findSCNFiles(in: url))
+                } else {
+                    // 如果是文件，检查扩展名
+                    if url.pathExtension.lowercased() == "scn" {
+                        scnFiles.append(url)
+                    }
+                }
+            }
+        } catch {
+            print("读取目录 \(directoryURL.path) 出错: \(error)")
+        }
+        return scnFiles
+    }
+}
 
 // MARK: - 预览
 #Preview {

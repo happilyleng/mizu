@@ -2610,9 +2610,15 @@ class SceneCoordinator: ObservableObject {
         cameraNode.camera = SCNCamera()
         cameraNode.position = SCNVector3(x: positionX, y: positionY, z: positionZ)
         scene.rootNode.addChildNode(cameraNode)
+        
+        if let modelNode = modelNode {
+            let keys = modelNode.animationKeys
+            print("模型动画键：\(keys)")
+        }
+
     }
     
-    // 更新摄像机位置
+    // 更新摄像机位置（X、Y 轴）
     func updateCameraPosition(deltaX: Float, deltaY: Float) {
         let newX = lastOffsetX + deltaX
         let newY = lastOffsetY + deltaY
@@ -2624,18 +2630,27 @@ class SceneCoordinator: ObservableObject {
         
         print("摄像机位置: \(cameraNode.position)")
     }
+    
     func storeLastOffset() {
         lastOffsetX = positionX
         lastOffsetY = positionY
     }
     
-    // 更新摄像机的 Z 轴 (数码表冠控制)
+    // 数码表冠调整摄像机的 Z 轴 (范围 10-50)
     func updateZoom(_ zoom: Double) {
         positionZ = Float(zoom)
         cameraNode.position.z = positionZ
-        print("摄像机Z轴: \(positionZ)")
+        print("摄像机Z轴(zoom): \(positionZ)")
     }
-    // 旋转模型
+    
+    // 新增方法：数字表冠调整摄像机的 Z 轴 (范围 10-60)
+    func updateZAxis(_ z: Double) {
+        positionZ = Float(z)
+        cameraNode.position.z = positionZ
+        print("摄像机Z轴(updateZAxis): \(positionZ)")
+    }
+    
+    // 旋转模型（示例方法）
     func rotateModel(y angle: Float) {
         rotationY += angle
         modelNode?.eulerAngles.y = rotationY * (Float.pi / 180) // 转换为弧度
@@ -2645,46 +2660,101 @@ class SceneCoordinator: ObservableObject {
 
 struct ModelView: View {
     @ObservedObject var coordinator = SceneCoordinator()
-    @State private var zoom: Double = 30 // 初始缩放值
-    @State private var isStepperFocused: Bool = false // 追踪 Stepper 焦点状态
-    @State private var isRotating: Bool = false // 追踪是否正在旋转
-    
+    @State private var isStepperFocused: Bool = false
+    @State private var isRotating: Bool = false
+
     var body: some View {
         ZStack {
             // 3D 模型视图
             SceneView(scene: coordinator.scene, options: [])
                 .edgesIgnoringSafeArea(.all)
-            // **确保表冠可以旋转**
+            // TabView 中包含一个或多个交互视图
+            TabView {
+                HModelView(coordinator: coordinator)
+                    .focusable(true)
+                    .tabItem {
+                        Label("摄像头控制", systemImage: "wand.and.stars")
+                    }
+                TModelView(coordinator: coordinator)
+                    .focusable(true)
+                    .tabItem{
+                        Label("仰角控制", systemImage: "wand.and.stars")
+                    }
+                // 其他视图可以在 TabView 中添加
+            }
+        }
+    }
+}
+
+struct HModelView: View {
+    @ObservedObject var coordinator: SceneCoordinator      // 用于缩放 / Z轴控制 (范围10-50)
+    @State private var zAxisControl: Double = 30  // 新增：用于调整 Z 轴 (范围10-60)
+    
+    var body: some View {
+        VStack{
             Color.clear
                 .focusable(true)
-                .contentShape(Rectangle()) // 让透明层可交互
-                .digitalCrownRotation($zoom, from: 10, through: 50, by: 0.5, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                .onChange(of: zoom) { newValue in
-                    coordinator.updateZoom(newValue)
+                .contentShape(Rectangle())
+                .digitalCrownRotation($zAxisControl, from: 10, through: 60, by: 0.5, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                .onChange(of: zAxisControl) { newValue in
+                    coordinator.updateZAxis(newValue)
                 }
                 .gesture(
                     DragGesture()
                         .onChanged { value in
-                            if !isStepperFocused { // 只有当 Stepper 没有焦点时才允许拖拽
-                                let deltaX = Float(value.translation.width) * -0.05
-                                let deltaY = Float(-value.translation.height) * -0.05 // Y 轴反向
-                                coordinator.updateCameraPosition(deltaX: deltaX, deltaY: deltaY)
-                            }
+                            let deltaX = Float(value.translation.width) * -0.05
+                            let deltaY = Float(-value.translation.height) * -0.05
+                            coordinator.updateCameraPosition(deltaX: deltaX, deltaY: deltaY)
                         }
                         .onEnded { _ in
-                            coordinator.storeLastOffset() // 记录偏移量，防止跳变
+                            coordinator.storeLastOffset()
                         }
                 )
+        }.navigationTitle{
+            Text("位置调整")
+                .font(.footnote)
+                .fontWeight(.bold)
+                .foregroundColor(Color.green)
         }
-        // Stepper
+    }
+}
+
+struct TModelView: View {
+    @ObservedObject var coordinator: SceneCoordinator
+    
+    // 摄像头仰角控制（X轴旋转）
+    @State private var cameraTilt: Float = 0.0
+    private let tiltLimit: Float = 45.0  // 限制最大仰角范围
+    
+    // 表冠控制模型旋转（Y轴）
+    @State private var rotationControl: Double = 0.0
+
+    var body: some View {
         VStack {
-            Stepper(value: Binding(
-                get: { self.coordinator.rotationY },
-                set: { newValue in self.coordinator.rotateModel(y: newValue - self.coordinator.rotationY) }
-            ), in: -360...360, step: 2) {
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }.frame(height: 0)
+            Color.clear
+                .focusable(true)
+                .contentShape(Rectangle())
+                // 绑定数码表冠旋转模型（范围 0° 到 360°）
+                .digitalCrownRotation($rotationControl, from: 0, through: 360, by: 1, sensitivity: .medium, isContinuous: true, isHapticFeedbackEnabled: true)
+                .onChange(of: rotationControl) { newValue in
+                    coordinator.rotateModel(y: Float(newValue))
+                }
+                // 手势调整摄像头仰角
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let deltaTilt = Float(value.translation.height) * -0.1
+                            let newTilt = max(-tiltLimit, min(tiltLimit, cameraTilt + deltaTilt))
+                            cameraTilt = newTilt
+                            coordinator.cameraNode.eulerAngles.x = newTilt * (Float.pi / 180) // 转弧度
+                        }
+                )
+        }.navigationTitle{
+            Text("角度调整")
+                .font(.footnote)
+                .fontWeight(.bold)
+                .foregroundColor(Color.green)
+        }
     }
 }
 

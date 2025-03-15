@@ -28,6 +28,4 @@ email：happilyleng@gmail.com 不保证在线
 
 ## 已知bug：
 
-1.加载封面的内存无法正常清理，导致闪退。
-
-2.cookie失效？
+buzhidao

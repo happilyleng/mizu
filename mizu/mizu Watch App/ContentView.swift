@@ -2812,21 +2812,17 @@ struct scnListView: View {
     @State private var scns: [URL] = []
 
     var body: some View {
-        ZStack{
-            ProgressView("加载中...")
-                .padding()
-            List {
-                ForEach(scns, id: \.self) { scnName in
-                    NavigationLink(destination: ModelView(modelName: scnName.lastPathComponent)) {
-                        Text(scnName.lastPathComponent)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.leading)
-                    }
+        List {
+            ForEach(scns, id: \.self) { scnName in
+                NavigationLink(destination: ModelView(modelName: scnName.lastPathComponent)) {
+                    Text(scnName.lastPathComponent)
+                        .fontWeight(.bold)
+                        .multilineTextAlignment(.leading)
                 }
             }
-            .onAppear(perform: loadVideos)
-            .navigationTitle("模型列表")
         }
+        .onAppear(perform: loadVideos)
+        .navigationTitle("模型列表")
     }
 
     func loadVideos() {

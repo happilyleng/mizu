@@ -1980,26 +1980,42 @@ struct NowPlayingView: View {
     }
 }
 
+class PlayerWrapper: ObservableObject {
+    @Published var player: AVPlayer
+    
+    init(url: URL, headers: [String: String]) {
+        let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+        let playerItem = AVPlayerItem(asset: asset)
+        self.player = AVPlayer(playerItem: playerItem)
+        for format in asset.tracks(withMediaType: .video) {
+            print("分辨率: \(format.naturalSize), 码率: \(format.estimatedDataRate)")
+        }
+    }
+}
+
 struct VideoPlayerView: View {
     let videoURL: URL
     @State private var isLandscape = false      // 控制视频是否旋转（横屏效果）
     @State private var showOptions = false        // 控制是否显示选项界面
     @State private var player = AVPlayer()        // 播放器实例
+    @StateObject private var playerWrapper: PlayerWrapper
     @Environment(\.presentationMode) var presentationMode  // 用于退出页面
-    let headers = [
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
-        "Referer": "https://www.bilibili.com/"
-    ]
+
+    init(videoURL: URL) {
+        let headers = [
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+            "Referer": "https://www.bilibili.com/"
+        ]
+            self.videoURL = videoURL
+            _playerWrapper = StateObject(wrappedValue: PlayerWrapper(url: videoURL, headers: headers))
+        }
     
     var body: some View {
         ZStack {
-            let asset = AVURLAsset(url: videoURL, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
-            let playerItem = AVPlayerItem(asset: asset)
-            // 视频播放器视图（旋转后会影响局部坐标系）
             let width = WKInterfaceDevice.current().screenBounds.width
             let height = WKInterfaceDevice.current().screenBounds.height
-            VideoPlayer(player: player)
-                .ignoresSafeArea()
+            VideoPlayer(player: playerWrapper.player)
+                .ignoresSafeArea(.all)
                 .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
                 .aspectRatio(contentMode: .fill)
                 .position(x: width / 2, y: height / 2)
@@ -2009,9 +2025,7 @@ struct VideoPlayerView: View {
                     height: WKInterfaceDevice.current().screenBounds.height
                 )
                 .onAppear {
-                    player = AVPlayer(url: videoURL)
-                    player.replaceCurrentItem(with: playerItem)
-                    player.play()
+                    playerWrapper.player.play()
                 }
             
             // 手势直接绑定在 VideoPlayer 上，方向判断根据当前旋转状态不同
@@ -2322,7 +2336,7 @@ struct ChatInterfaceView: View {
     // 加载聊天记录
     func loadChatHistories() {
         if let data = UserDefaults.standard.data(forKey: "chatHistories"),
-           let decodedHistories = try? JSONDecoder().decode([ChatHistory].self, from: data) { 
+           let decodedHistories = try? JSONDecoder().decode([ChatHistory].self, from: data) {
             chatHistories = decodedHistories
         }
     }
@@ -2810,7 +2824,7 @@ struct TModelView: View {
 }
 struct scnListView: View {
     @State private var scns: [URL] = []
-
+    
     var body: some View {
         List {
             ForEach(scns, id: \.self) { scnName in

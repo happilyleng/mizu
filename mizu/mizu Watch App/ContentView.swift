@@ -2829,7 +2829,6 @@ struct scnListView: View {
         }
     }
 
-    /// 加载 `scns` 目录中的 `.scn` 文件
     func loadVideos() {
         let bundleURL = Bundle.main.bundleURL  // 获取主资源包路径
         
@@ -2844,15 +2843,9 @@ struct scnListView: View {
             // 遍历 Bundle 中的所有文件和文件夹
             for url in contents {
                 print(url.lastPathComponent)
-                
-                // 如果是文件夹，递归调用函数查找
-                if url.hasDirectoryPath {
-                    scnFiles.append(contentsOf: findSCNFiles(in: url))
-                } else {
-                    // 如果是文件，检查扩展名是否为 .scn
-                    if url.pathExtension.lowercased() == "scn" {
-                        scnFiles.append(url)
-                    }
+                // 如果是文件，检查扩展名是否为 .scn
+                if url.pathExtension.lowercased() == "scn" {
+                    scnFiles.append(url)
                 }
             }
             
@@ -2870,31 +2863,6 @@ struct scnListView: View {
         } catch {
             print("读取 Bundle 内容出错: \(error)")
         }
-    }
-
-    /// 递归查找指定目录下所有的 .scn 文件
-    func findSCNFiles(in directoryURL: URL) -> [URL] {
-        let fileManager = FileManager.default
-        var scnFiles: [URL] = []
-        
-        do {
-            let contents = try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
-            
-            for url in contents {
-                if url.hasDirectoryPath {
-                    // 如果是文件夹，递归查找
-                    scnFiles.append(contentsOf: findSCNFiles(in: url))
-                } else {
-                    // 如果是文件，检查扩展名
-                    if url.pathExtension.lowercased() == "scn" {
-                        scnFiles.append(url)
-                    }
-                }
-            }
-        } catch {
-            print("读取目录 \(directoryURL.path) 出错: \(error)")
-        }
-        return scnFiles
     }
 }
 

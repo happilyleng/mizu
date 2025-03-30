@@ -14,6 +14,7 @@ import SDWebImageSwiftUI
 import Combine
 import CryptoKit
 import EFQRCode
+import Network
 import WatchKit
 import SceneKit
 import AVKit
@@ -138,43 +139,190 @@ struct Durl: Codable {
     let url: String
     let backup_url: [String]?
 }
-// MARK: - 乱搞
-struct MySelf: View{
-    var body:some View{
+
+// MARK: - 主视图
+struct ContentView: View {
+    let width = WKInterfaceDevice.current().screenBounds.width
+    @State private var showSettings = false // 用于显示设置视图
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
+    @StateObject private var networkMonitor = NetworkMonitor.shared // 使用单例
+    let height = WKInterfaceDevice.current().screenBounds.height
+    @State private var isConnected: Bool = false  // 让 isConnected 成为 @State
+    @State private var playerWrapper: PlayerWrapper?
+    @AppStorage("isSmallVideo") private var isSmallVideo: Bool = false
+    
+    var body: some View {
         ZStack{
-            Color.white.opacity(0.2)
-                .ignoresSafeArea()
-            ZStack{
-                Color.blue.opacity(0.1)
+            if isDarkMode {
+                Color.gray.opacity(0.2)
                     .ignoresSafeArea()
-                ZStack{
-                    Color.red.opacity(0.05)
-                        .frame(width: 170,height: 120)
+            } else {
+                Color.gray.opacity(0.8)
+                    .ignoresSafeArea()
+            }
+            ZStack(alignment: .bottomLeading){
+                if isSmallVideo {
+                    VideoNowPlayerView()
+                        .zIndex(1)
+                        .padding()
+                        .focusable(false)
+                }
+                NavigationStack{
                     ZStack{
-                        Color.red.opacity(0.05)
-                            .frame(width: 155,height: 105)
+                        Color.white.opacity(isDarkMode ? 0:0.5)
+                            .ignoresSafeArea()
                         ZStack{
-                            Color.red.opacity(0.05)
-                                .frame(width: 140,height: 90)
-                            ZStack{
-                                Color.red.opacity(0.05)
-                                    .frame(width: 125,height: 75)
-                                ZStack{
-                                    Color.red.opacity(0.05)
-                                        .frame(width: 110,height: 60)
-                                    ZStack{
-                                        Color.red.opacity(0.05)
-                                            .frame(width: 95,height: 45)
-                                        ZStack{
-                                            Color.red.opacity(0.05)
-                                                .frame(width: 80,height: 30)
-                                            ZStack{
-                                                Color.red.opacity(0.05)
-                                                    .frame(width: 65,height: 15)
-                                            }
-                                        }
-                                    }
+                            Color.red.opacity(isDarkMode ? 0:0.1)
+                                .ignoresSafeArea()
+                            ZStack(){
+                                VStack{
+                                    Text("MIZU")
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 15)
+                                        .font(.system(size: 50))
+                                        .foregroundStyle(Color.blue)
+                                        .fontWeight(.bold)
+                                    Text("Made")
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(Color.blue)
+                                    Text("by")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(Color.green)
+                                    Text("Cindy")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(Color.orange)
                                 }
+                                ScrollView {
+                                    if !networkMonitor.isConnected {
+                                        Button("重新测试网络连接"){
+                                            networkMonitor.checkCurrentStatus()
+                                        }
+                                        .padding(.horizontal, 30)
+                                        .padding(.vertical, 5)
+                                        .foregroundColor(.white.opacity(0.8))
+                                        .fontWeight(.bold)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .fill(Color.red.opacity(0.8))
+                                        )
+                                        .buttonStyle(PlainButtonStyle())
+                                        .zIndex(1)
+                                    }
+                                    
+                                    NavigationLink(destination: Index()) {
+                                        Text("进入首页")
+                                            .padding(.horizontal, 30)
+                                            .padding(.vertical, 5)
+                                            .foregroundColor(.white.opacity(isDarkMode ? 0.8: 0.5))
+                                            .fontWeight(.bold)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(Color.red.opacity(0.3))
+                                            )
+                                    }
+                                    .disabled(!networkMonitor.isConnected)
+                                    .buttonStyle(PlainButtonStyle())
+                                    NavigationLink(destination: VideoSearch()) {
+                                        Text("进入搜索")
+                                            .padding(.horizontal, 30)
+                                            .padding(.vertical, 5)
+                                            .foregroundColor(.white.opacity(isDarkMode ? 0.8: 0.5))
+                                            .fontWeight(.bold)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(Color.orange.opacity(0.3))
+                                            )
+                                    }
+                                    .disabled(!networkMonitor.isConnected)
+                                    .buttonStyle(PlainButtonStyle())
+                                    
+                                    NavigationLink(destination: BiliLoginView()) {
+                                        Text("登录账号")
+                                            .padding(.horizontal, 30)
+                                            .padding(.vertical, 5)
+                                            .foregroundColor(.white.opacity(isDarkMode ? 0.8: 0.5))
+                                            .fontWeight(.bold)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(Color.yellow.opacity(0.3))
+                                            )
+                                    }
+                                    .disabled(!networkMonitor.isConnected)
+                                    .buttonStyle(PlainButtonStyle())
+                                    
+                                    NavigationLink(destination: VideoListView()) {
+                                        Text("下载内容")
+                                            .padding(.horizontal, 30)
+                                            .padding(.vertical, 5)
+                                            .foregroundColor(.white.opacity(isDarkMode ? 0.8: 0.5))
+                                            .fontWeight(.bold)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(Color.green.opacity(0.3))
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    
+                                    NavigationLink(destination: Ai()) {
+                                        Text("五河琴里")
+                                            .padding(.horizontal, 30)
+                                            .padding(.vertical, 5)
+                                            .foregroundColor(.white.opacity(isDarkMode ? 0.8: 0.5))
+                                            .fontWeight(.bold)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(Color.cyan.opacity(0.3))
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    
+                                    NavigationLink(destination: scnListView()) {
+                                        Text("本地模型")
+                                            .padding(.horizontal, 30)
+                                            .padding(.vertical, 5)
+                                            .foregroundColor(.white.opacity(isDarkMode ? 0.8: 0.5))
+                                            .fontWeight(.bold)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(Color.blue.opacity(0.3))
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                                .frame(width:width)
+                            }
+                        }
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { // 左上角
+                            NavigationLink(destination: GlobalSettingsView()) {
+                                Image(systemName: "gear")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                                    .padding(8)
+                                    .background(Circle().fill(Color.gray.opacity(0.2)))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        
+                        ToolbarItem(placement: .confirmationAction) { // 右上角
+                            NavigationLink(destination: NowPlayingView()) {
+                                NowPlayingPreView()
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        
+                    }
+                    .navigationTitle{
+                        HStack{
+                            if networkMonitor.isConnected {
+                                Text("MIZU")
+                                    .foregroundColor(.white)
+                                    .fontWeight(.bold)
+                            } else {
+                                Image(systemName:"wifi.slash")
+                                    .foregroundColor(.white)
                             }
                         }
                     }
@@ -184,156 +332,291 @@ struct MySelf: View{
     }
 }
 
-// MARK: - 主视图
-struct ContentView: View {
-    @ObservedObject var playerManager = GlobalMusicPlayer.shared  // 监听全局播放器
-    let width = WKInterfaceDevice.current().screenBounds.width
-    let height = WKInterfaceDevice.current().screenBounds.height
+// MARK: -播放器的包装
+class GlobalVideoPlayer: ObservableObject {
+    static let shared = GlobalVideoPlayer()  // 单例模式
+    @Published var currentPlayer: AVQueuePlayer = AVQueuePlayer()
+
+    private var cancellables: Set<AnyCancellable> = []
+
+    private init() {}
+    
+    // 通过 URL 设置视频并播放
+    func setVideoURL(_ url: URL) {
+        let headers = [
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+            "Referer": "https://www.bilibili.com/"
+        ]
+        // 使用 AVURLAsset 设置请求头
+        let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+        
+        // 创建 AVPlayerItem，并用 asset 初始化
+        let playerItem = AVPlayerItem(asset: asset)
+        
+        // 将 AVPlayerItem 添加到 AVQueuePlayer
+        currentPlayer.insert(playerItem, after: nil)
+        
+        // 播放视频
+        currentPlayer.play()
+    }
+}
+
+// 播放器包装类（增加状态监听和资源释放）
+class PlayerWrapper: NSObject, ObservableObject {
+    @Published var player: AVQueuePlayer
+    @Published var isReadyToPlay: Bool = false
+
+    private var statusObservation: AnyCancellable?
+
+    init(player: AVQueuePlayer, headers: [String: String]) {
+        self.player = player
+        super.init()
+
+        DispatchQueue.main.async {
+            if let currentItem = player.currentItem {
+                self.statusObservation = currentItem.publisher(for: \.status)
+                    .receive(on: DispatchQueue.main)
+                    .sink { status in
+                        if status == .readyToPlay {
+                            self.isReadyToPlay = true
+                            self.player.play()  // 确保播放器准备好后再播放
+                        }
+                    }
+            }
+        }
+    }
+
+    deinit {
+        statusObservation?.cancel()
+    }
+}
+
+
+// 将四字符代码 (FourCC) 转换成人类可读的格式
+func fourCCString(_ type: OSType) -> String {
+    let chars = [
+        Character(UnicodeScalar((type >> 24) & 0xFF)!),
+        Character(UnicodeScalar((type >> 16) & 0xFF)!),
+        Character(UnicodeScalar((type >> 8) & 0xFF)!),
+        Character(UnicodeScalar(type & 0xFF)!)
+    ]
+    return String(chars)
+}
+
+// 视频预览（复用共享的播放器实例）
+struct VideoPlayerPreView: View {
+    @ObservedObject var playerWrapper: PlayerWrapper
+
+    var body: some View {
+        ZStack {
+            VideoPlayer(player: playerWrapper.player)
+                .frame(minWidth: 150, maxWidth: 200, minHeight: 100, maxHeight: 150)
+                .aspectRatio(contentMode: .fill)
+        }
+        .onAppear {
+            playerWrapper.player.play()
+        }
+    }
+}
+
+// 视频预览（复用共享的播放器实例）
+struct VideoNowPlayerView: View {
+    @StateObject private var playerWrapper = GlobalVideoPlayer.shared  // 使用 @StateObject 绑定单例实例
     
     var body: some View {
-        ZStack{
-            Color.white.opacity(0.5)
-                .ignoresSafeArea()
-            ZStack{
-                Color.red.opacity(0.1)
-                    .ignoresSafeArea()
-                NavigationView {
-                    ZStack {
-                        VStack{
-                            Text("MIZU")
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 15)
-                                .font(.system(size: 50))
-                                .foregroundStyle(Color.blue)
-                                .fontWeight(.bold)
-                            Text("Made")
-                                .fontWeight(.bold)
-                                .foregroundStyle(Color.blue)
-                            Text("by")
-                                .fontWeight(.bold)
-                                .foregroundColor(Color.green)
-                            Text("Cindy")
-                                .fontWeight(.bold)
-                                .foregroundColor(Color.orange)
-                        }
-                        ScrollView
-                        {
-                            if let oldPlayer = playerManager.currentPlayer{
-                                NavigationLink(destination: NowPlayingView()) {
-                                    Text("正在播放")
-                                        .padding(.horizontal, 30)
-                                        .padding(.vertical, 5)
-                                        .foregroundColor(.white.opacity(0.5))
-                                        .fontWeight(.bold)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .fill(Color.red.opacity(0.6))
-                                        )
+        ZStack {
+            VideoPlayer(player: playerWrapper.currentPlayer)
+                .frame(minWidth: 0, maxWidth: 100, minHeight: 0, maxHeight: 60)
+                .aspectRatio(contentMode: .fill)
+        }
+        .onAppear {
+            // 确保播放器准备好后再播放
+            if playerWrapper.currentPlayer.currentItem?.status == .readyToPlay {
+                playerWrapper.currentPlayer.play()
+            }
+        }.onDisappear {
+            playerWrapper.currentPlayer.pause()  // 停止播放
+        }
+    }
+}
+
+
+// 视频播放器全屏播放
+struct VideoPlayerView: View {
+    @ObservedObject var playerWrapper: PlayerWrapper
+    @State private var isLandscape = false
+    @State private var showOptions = false
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        ZStack {
+            let width = WKInterfaceDevice.current().screenBounds.width
+            let height = WKInterfaceDevice.current().screenBounds.height
+
+            VideoPlayer(player: playerWrapper.player)
+                .ignoresSafeArea(.all)
+                .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
+                .aspectRatio(contentMode: isLandscape ? .fill : .fit)
+                .position(x: isLandscape ? width / 2 + 15 : width / 2, y: height / 2)
+                .clipped()
+                .frame(width: width, height: height)
+                .navigationBarBackButtonHidden(true)
+                .ignoresSafeArea(.all)
+                .onAppear {
+                    playerWrapper.player.play()
+                }
+                .gesture(
+                    DragGesture(minimumDistance: 20)
+                        .onEnded { value in
+                            if isLandscape {
+                                // 视频旋转 90° 时，相对于视频的右方向对应全局向下滑动
+                                if value.translation.height > 50 {
+                                    withAnimation { showOptions = true }
+                                } else if value.translation.height < -50 {
+                                    withAnimation { showOptions = false }
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                            } else {
+                                // 未旋转时：右滑（translation.width > 50）显示菜单
+                                if value.translation.width > 50 {
+                                    withAnimation { showOptions = true }
+                                } else if value.translation.width < -50 {
+                                    withAnimation { showOptions = false }
+                                }
                             }
-                            NavigationLink(destination: Index()) {
-                                Text("进入首页")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.red.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            NavigationLink(destination: VideoSearch()) {
-                                Text("进入搜索")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.orange.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            NavigationLink(destination: BiliLoginView()) {
-                                Text("登录账号")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.yellow.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            NavigationLink(destination: VideoListView()) {
-                                Text("下载内容")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.green.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            NavigationLink(destination: Ai()) {
-                                Text("五河琴里")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.cyan.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            NavigationLink(destination: scnListView()) {
-                                Text("本地模型")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.blue.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            NavigationLink(destination: MySelf()) {
-                                Text("小彩蛋哦")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.purple.opacity(0.3))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
                         }
-                        .frame(width:width)
+                )
+                .navigationBarBackButtonHidden(true)
+                .ignoresSafeArea(.all)
+            // 右侧（或横屏时的底部）选项菜单
+            
+            if showOptions {
+                Group {
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            withAnimation {
+                                isLandscape.toggle()
+                                showOptions = false
+                            }
+                            playerWrapper.player.play()
+                        }) {
+                            Label("旋转", systemImage: "rotate.right")
+                        }
+                        Button(action: {
+                            withAnimation { showOptions = false }
+                            presentationMode.wrappedValue.dismiss()
+                        }) {
+                            Label("返回", systemImage: "chevron.left")
+                        }
                     }
+                    .padding(10)
+                    .background(Color.blue.opacity(0.8))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                .padding(isLandscape ? .bottom : .trailing, 10)
+                .padding(isLandscape ? .leading : .top, 50)
+                .transition(.move(edge: isLandscape ? .top : .leading))
+                .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
+            }
+        }
+        .onAppear{
+            playerWrapper.player.play()
+        }
+    }
+}
+
+
+class NetworkMonitor: ObservableObject {
+    static let shared = NetworkMonitor() // 单例实例，确保共享访问
+    @Published var isConnected: Bool = false // 发布属性，用于通知订阅者网络连接状态
+    private init() { // 私有化初始化方法，确保只有一个实例
+        checkNetworkConnection()
+    }
+    
+    // 检查网络连接状态的方法
+    func checkNetworkConnection() {
+        // 使用 URLSession 发送一个简单的网络请求
+        let url = URL(string: "https://www.apple.com")! // 一个常见的网站，用于检查网络连接
+        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    // 输出详细错误信息
+                    print("网络连接失败: \(error.localizedDescription)")
+                    self?.isConnected = false
+                } else if let response = response as? HTTPURLResponse, response.statusCode == 200 {
+                    self?.isConnected = true
+                    print("网络已连接")
+                } else {
+                    // 输出响应状态码信息
+                    print("网络不可达，状态码：\(response as? HTTPURLResponse)?.statusCode ?? 0")
+                    self?.isConnected = false
                 }
             }
         }
+        task.resume() // 启动任务
+    }
+    
+    // 手动检查当前网络状态
+    func checkCurrentStatus() {
+        checkNetworkConnection() // 重新执行网络连接检查
+    }
+}
+
+// MARK: - 设置
+struct GlobalSettingsView: View {
+    // 使用 @AppStorage 使设置值持久化
+    @AppStorage("isPreVideoModeEnabled") private var isPreVideoModeEnabled: Bool = true
+    @AppStorage("isConsoleManagerEnabled") private var isConsoleManagerEnabled: Bool = true
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
+    @AppStorage("isSmallVideo") private var isSmallVideo: Bool = false
+    @State private var playerWrapper: PlayerWrapper?
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $isPreVideoModeEnabled){
+                    HStack{
+                        Text("启用显示视频预览模式")
+                        Spacer()
+                        Image(systemName: "video.fill")
+                    }
+                }
+                .padding()
+                Toggle(isOn: $isConsoleManagerEnabled){
+                    HStack{
+                        Text("启用显示应用实时日志")
+                        Spacer()
+                        Image(systemName: "terminal.fill")
+                    }
+                }
+                .padding()
+                Toggle(isOn: $isDarkMode){
+                    HStack{
+                        Text("启用应用的黑色调模式")
+                        Spacer()
+                        Image(systemName: isDarkMode ? "lightbulb":"lightbulb.fill")
+                    }
+                }
+                .padding()
+                Toggle(isOn: $isSmallVideo){
+                    HStack{
+                        Text("启用应用的画中画模式")
+                        Spacer()
+                        Image(systemName: "inset.filled.bottomleft.rectangle")
+                    }
+                }
+                .padding()
+            }
+        }
+        .navigationTitle("设置")
     }
 }
 
 // MARK: - 视频列表视图
 struct Index: View {
+    @State private var playerWrapper: PlayerWrapper?
     @StateObject var consoleManager = ConsoleManager()
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     @ObservedObject var downloadManager = DownloadManager.shared
     @State private var videos: [VideoData] = []
     @State private var isloading = false
@@ -343,13 +626,13 @@ struct Index: View {
     @Environment(\.dismiss) private var dismiss
     let width = WKInterfaceDevice.current().screenBounds.width
     let height = WKInterfaceDevice.current().screenBounds.height
-
+    
     var body: some View {
-        ZStack{
+        ZStack(alignment: .bottomLeading){
             ScrollView {
                 if downloadManager.isDownloading == true{
                     DownloadView()
-                    .buttonStyle(PlainButtonStyle())
+                        .buttonStyle(PlainButtonStyle())
                     SmallDivider()
                 }
                 LazyVStack {
@@ -357,6 +640,7 @@ struct Index: View {
                         NavigationLink(destination: VideoDetailIndex(video: video)) {
                             VideoRow(video: video)
                         }
+                        .disabled(downloadManager.isDownloading)
                         .onDisappear {
                             SDImageCache.shared.clearMemory()
                         }
@@ -364,9 +648,9 @@ struct Index: View {
                         .frame(maxWidth:width,minHeight: height-50)
                         .overlay(
                             RoundedRectangle(cornerRadius: 5)
-                                .stroke(Color.white, lineWidth: 3)
+                                .stroke(isDarkMode ? Color.white:Color.black, lineWidth: 3)
                         )
-                        SmallDivider(color:.blue.opacity(0.5),height:5)
+                        SmallDivider(color:.blue.opacity(0),height:1)
                     }
                     if isloading {
                         ProgressView("加载中...")
@@ -386,18 +670,22 @@ struct Index: View {
                         .foregroundStyle(Color.blue)
                     }
                 }
-                .padding()
-            }
-            .onAppear {
-                if videos.isEmpty { fetchVideos() }
-                
-                let imageCache = SDImageCache.shared
-                imageCache.config.maxMemoryCost = 400 * 1024 * 1024  // 例如设置为 400M
-                imageCache.config.maxMemoryCount = 4  // 限制最大缓存图片数量/
+                .navigationTitle("视频列表")
             }
         }
+        .onAppear {
+            if let wrapper = playerWrapper {
+                print("stoped")
+                wrapper.player.replaceCurrentItem(with: nil)
+            }
+            if videos.isEmpty { fetchVideos() }
+            
+            let imageCache = SDImageCache.shared
+            imageCache.config.maxMemoryCost = 400 * 1024 * 1024  // 例如设置为 400M
+            imageCache.config.maxMemoryCount = 4  // 限制最大缓存图片数量/
+        }
     }
-
+    
     private func fetchVideos() {
         guard !isloading, hasMoreVideos else { return }
         isloading = true
@@ -475,184 +763,268 @@ struct SmallDivider: View {
 }
 
 struct VideoRow: View {
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     let video: VideoData
 
     var body: some View {
-        VStack(alignment: .leading) {
-            if let picurl = URL(string: video.pic.replacingOccurrences(of: "http", with: "https")){
-                WebImage(url: picurl)
-                    .resizable()
-                    .indicator(.activity)
-                    .scaledToFit()
-                    .padding()
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.gray, lineWidth: 3)
-                    )
+        ZStack {
+            if isDarkMode {
+                Color.black.opacity(0.8)
             } else {
-                Text("图片无法加载")
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.gray, lineWidth: 3)
-                    )
+                Color.white.opacity(0.8)
             }
-            
-            Text(video.title)
-                .font(.headline)
-                .bold()
-                .lineLimit(2)
-            SmallDivider()
-            Text("作者：\(video.owner.name)")
-                .font(.subheadline)
-            Text("播放量：\(video.stat.view)")
-                .font(.subheadline)
+            VStack(alignment: .leading) {
+                if let picurl = URL(string: video.pic.replacingOccurrences(of: "http", with: "https")){
+                    WebImage(url: picurl)
+                        .resizable()
+                        .indicator(.activity)
+                        .scaledToFit()
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(isDarkMode ? Color.white:Color.black, lineWidth: 3)
+                        )
+                } else {
+                    Text("图片无法加载")
+                        .foregroundColor(isDarkMode ? .white:.black)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(isDarkMode ? Color.white:Color.black, lineWidth: 3)
+                        )
+                }
+                
+                Text(video.title)
+                    .foregroundColor(isDarkMode ? .white:.black)
+                    .font(.headline)
+                    .bold()
+                    .lineLimit(2)
+                SmallDivider()
+                Text("作者：\(video.owner.name)")
+                    .font(.subheadline)
+                    .foregroundColor(isDarkMode ? .white:.black)
+                Text("播放量：\(video.stat.view)")
+                    .font(.subheadline)
+                    .foregroundColor(isDarkMode ? .white:.black)
+            }
+            .padding()
         }
-        .padding()
     }
 }
 
 struct VideoDetail: View {
     let video: VideoData
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("isPreVideoModeEnabled") private var isPreVideo: Bool = true
     @ObservedObject var consoleManager: ConsoleManager
     @ObservedObject var downloadManager = DownloadManager.shared
     @State private var playerURL: URL?
+    @State private var playerWrapper: PlayerWrapper?
     let width = WKInterfaceDevice.current().screenBounds.width
     let height = WKInterfaceDevice.current().screenBounds.height
+    @AppStorage("isSmallVideo") private var isSmallVideo: Bool = false
+    @State private var isv: Bool = false
+
+    @State private var isloading: Bool = false
 
     var body: some View {
+        ZStack {
+            let showToast = downloadManager.showToast
+            // Toast 提示区域
             ZStack {
-                let showToast = downloadManager.showToast
-                ZStack{
-                    if showToast {
-                        VStack {
-                            Spacer()
-                            ToastView(message: "已添加到资料库")
-                                .padding()
-                                .cornerRadius(10)
-                                .shadow(radius: 10)
-                                .transition(.move(edge: .bottom))
-                                .animation(.easeInOut, value: showToast)
-                        }
-                        .padding(.bottom, 20)
+                if showToast {
+                    VStack {
+                        Spacer()
+                        ToastView(message: "已添加到资料库")
+                            .padding()
+                            .cornerRadius(10)
+                            .shadow(radius: 10)
+                            .transition(.move(edge: .bottom))
+                            .animation(.easeInOut, value: showToast)
                     }
+                    .padding(.bottom, 20)
                 }
-                .zIndex(1)
-                .padding()
-                ZStack{
+            }
+            .zIndex(1)
+            .padding()
+            // 下载页面入口
+            ZStack {
+                NavigationLink(destination: DownloadView()) {
                     DownloadView()
                         .shadow(radius: 10)
                 }
-                .zIndex(1)
-                
-                Text(video.title)
-                    .foregroundStyle(Color.blue.opacity(0.4))
-                    .font(.system(size: 30))
-                    .bold()
-                ZStack{
-                    WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
-                        .resizable()
-                        .scaledToFill()
-                        .blur(radius: 10)
+                .buttonStyle(PlainButtonStyle())
+            }
+            .zIndex(1)
+            
+            Text(video.title)
+                .foregroundStyle(Color.blue.opacity(0.4))
+                .font(.system(size: 30))
+                .bold()
+            
+            ZStack {
+                WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
+                    .resizable()
+                    .scaledToFill()
+                    .blur(radius: 10)
+                    .ignoresSafeArea()
+                ZStack {
+                    Color.gray.opacity(0.6)
                         .ignoresSafeArea()
-                    ZStack{
-                        Color.gray.opacity(0.6)
-                            .ignoresSafeArea()
-                        ZStack{
-                            ScrollView {
-                                VStack{
-                                    VStack(spacing: 16) {
+                    ZStack {
+                        ScrollView {
+                            VStack {
+                                VStack(spacing: 16) {
+                                    if let wrapper = playerWrapper {
+                                        if isPreVideo {
+                                            NavigationLink(destination: VideoPlayerView(playerWrapper: wrapper)) {
+                                                VideoPlayerPreView(playerWrapper: wrapper)
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                            .onAppear {
+                                                wrapper.player.play()
+                                            }
+                                        } else {
+                                            NavigationLink(destination: VideoPlayerView(playerWrapper: wrapper)) {
+                                                Text("点击播放")
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                    } else {
+                                        VStack(alignment: .center) {
+                                            ProgressView("加载视频中...")
+                                                .padding()
+                                            Text("如果视频一直没加载出来")
+                                            Text("请检查是否登录")
+                                        }
+                                    }
+                                    
+                                    // 其他视频信息的 UI（例如标题、头像、播放量等）
+                                    SmallDivider()
+                                    Text(video.title)
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal)
+                                    
+                                    HStack {
+                                        WebImage(url: URL(string: video.owner.face))
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 50, height: 50)
+                                            .clipShape(Circle())
+                                        
+                                        Text(video.owner.name)
+                                            .font(.headline)
+                                            .padding(.leading, 8)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal)
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("播放量：\(video.stat.view)")
+                                        Text("点赞数：\(video.stat.like)")
+                                        Text("bvid: \(video.bvid)")
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 20)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.blue, lineWidth: 3)
+                                    )
+                                    
+                                    // 封面查看和下载按钮
+                                    if playerWrapper != nil {
                                         NavigationLink(destination: ViewPicture(PicUrl: video.pic.replacingOccurrences(of: "http", with: "https"))) {
-                                            WebImage(url: URL(string: video.pic.replacingOccurrences(of: "http", with: "https")))
-                                                .resizable()
-                                                .indicator(.activity)
-                                                .scaledToFit()
-                                                .frame(minWidth: width-10,maxWidth:width)
-                                                .padding(.horizontal,2)
-                                                .padding(.vertical,2)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 5)
-                                                        .stroke(Color.pink.opacity(0.5), lineWidth: 5)
+                                            Text("查看封面")
+                                                .padding(.horizontal, 50)
+                                                .padding(.vertical, 10)
+                                                .foregroundColor(.white)
+                                                .fontWeight(.bold)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .fill(Color.orange.opacity(0.5))
                                                 )
                                         }
-                                        .frame(minWidth: 150,maxWidth:200)
                                         .buttonStyle(PlainButtonStyle())
-
-                                        SmallDivider()
-                                        Text(video.title)
-                                            .font(.title3)
-                                            .fontWeight(.bold)
-                                            .multilineTextAlignment(.center)
-                                            .padding(.horizontal)
                                         
-                                        HStack {
-                                            WebImage(url: URL(string: video.owner.face))
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 50, height: 50)
-                                                .clipShape(Circle())
-                                            
-                                            Text(video.owner.name)
-                                                .font(.headline)
-                                                .padding(.leading, 8)
-                                            Spacer()
-                                        }
-                                        .padding(.horizontal)
-                                        
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            Text("播放量：\(video.stat.view)")
-                                            Text("点赞数：\(video.stat.like)")
-                                            Text("bvid: \(video.bvid)")
-                                        }
-                                        .padding(.horizontal)
-                                        .padding(.vertical, 20)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.blue, lineWidth: 3)
-                                        )
-                                        
-                                        if let playerURL = playerURL{
-                                            NavigationLink(destination: VideoPlayerView(videoURL: playerURL)) {
-                                                Text("播放视频")
-                                                    .padding(.horizontal, 50)
-                                                    .padding(.vertical, 10)
-                                                    .foregroundColor(.white)
-                                                    .fontWeight(.bold)
-                                                    .background(
-                                                        RoundedRectangle(cornerRadius: 20)
-                                                            .fill(Color.orange.opacity(0.5))
-                                                    )
+                                        Button(action: {
+                                            if let wrapper = playerWrapper{
+                                                wrapper.player.pause()
                                             }
-                                            .buttonStyle(PlainButtonStyle())
                                             
-                                            Button(action: {
-                                                detectVideoIDType(video.bvid, videoName: video.title)
-                                            }) {
-                                                Text("下载视频")
-                                                    .padding(.horizontal, 50)
-                                                    .padding(.vertical, 10)
-                                                    .foregroundColor(.white)
-                                                    .fontWeight(.bold)
-                                                    .background(
-                                                        RoundedRectangle(cornerRadius: 20)
-                                                            .fill(Color.blue.opacity(0.5))
-                                                    )
+                                            Task {
+                                                await detectVideoIDType(video.bvid, videoName: video.title)
                                             }
-                                            .buttonStyle(PlainButtonStyle())
-                                            
+                                        }) {
+                                            Text("下载视频")
+                                                .padding(.horizontal, 50)
+                                                .padding(.vertical, 10)
+                                                .foregroundColor(.white)
+                                                .fontWeight(.bold)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .fill(Color.blue.opacity(0.5))
+                                                )
                                         }
+                                        .buttonStyle(PlainButtonStyle())
                                     }
                                 }
                             }
                         }
-                        .frame(maxWidth:width)
-                        .onAppear{
-                            detectOnlineVideoIDType(video.bvid, videoName: video.title){ videoURL in
-                                if let videoURL = videoURL{
-                                    print(videoURL)
-                                    self.playerURL = videoURL
+                    }
+                    .frame(maxWidth: width)
+                    .onAppear {
+                        isv = isSmallVideo
+                        if isSmallVideo{
+                            isSmallVideo = false
+                        }
+                        if playerWrapper == nil {
+                            detectOnlineVideoIDType(video.bvid, videoName: video.title) { videoURL in
+                                if let videoURL = videoURL {
+                                    DispatchQueue.main.async {
+                                        GlobalVideoPlayer.shared.setVideoURL(videoURL)
+                                        let headers = [
+                                            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+                                            "Referer": "https://www.bilibili.com/"
+                                        ]
+                                        self.playerWrapper = PlayerWrapper(player: GlobalVideoPlayer.shared.currentPlayer, headers: headers)
+                                    }
+                                }
                             }
                         }
                     }
+                }
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) { // 左上角
+                Button(action: {
+                    if isv {
+                        isSmallVideo = true
+                        dismiss()
+                    } else {
+                        if let wrapper = playerWrapper {
+                            wrapper.player.replaceCurrentItem(with: nil)
+                        }
+                        dismiss()
+                    }
+                }){
+                    Image(systemName: "arrow.down.left.topright.rectangle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .padding(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            if let url = URL(string: "https://www.bilibili.com/video/\(video.bvid)") {
+                ToolbarItem(placement: .confirmationAction) {
+                    ShareLink(item: url) {
+                        Label("分享", systemImage: "square.and.arrow.up.fill")
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
@@ -660,6 +1032,7 @@ struct VideoDetail: View {
 }
 
 struct VideoDetailIndex: View {
+    @AppStorage("isConsoleManagerEnabled") private var isConsoleManagerEnabled: Bool = true
     @StateObject var consoleManager = ConsoleManager()
     let video: VideoData
     
@@ -670,11 +1043,13 @@ struct VideoDetailIndex: View {
                 .tabItem {
                     Label("首页", systemImage: "message")
                 }
-            ConsoleView(consoleManager: consoleManager)
-                .tabItem {
-                    Label("日志", systemImage: "terminal")
-                }
-                .toolbar(.hidden, for: .navigationBar)
+            if isConsoleManagerEnabled {
+                ConsoleView(consoleManager: consoleManager)
+                    .tabItem {
+                        Label("日志", systemImage: "terminal")
+                    }
+                    .toolbar(.hidden, for: .navigationBar)
+            }
         }
         .onAppear {
             DownloadManager.shared.consoleManager = consoleManager
@@ -728,7 +1103,7 @@ struct ViewPicture: View {
         
         VStack {
             Button(action: {
-                            dismiss()
+                dismiss()
             }) {
                 HStack {
                     Image(systemName: "arrow.left") // 返回图标
@@ -819,6 +1194,9 @@ struct VideoSearch: View {
     @State private var isLoading = false
     @State private var errorMessage: String? = nil
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
+    let width = WKInterfaceDevice.current().screenBounds.width
+    let height = WKInterfaceDevice.current().screenBounds.height
 
     var body: some View {
         VStack {
@@ -871,12 +1249,12 @@ struct VideoSearch: View {
                                     SDImageCache.shared.clearMemory()
                             }
                             .buttonStyle(PlainButtonStyle())
-                            .padding(.vertical, 10)
-                            .padding(.horizontal,5)
-                            .frame(width:150)
+                            .frame(maxWidth:width,minHeight: height-50)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.white, lineWidth: 3))
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(isDarkMode ? Color.white:Color.black, lineWidth: 3)
+                            )
+                            SmallDivider(color:.blue.opacity(0),height:1)
                         }
                     }
                 }
@@ -945,84 +1323,110 @@ struct VideoSearch: View {
 }
 
 struct SearchResultRow: View {
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     let video: SearchResult
 
     var body: some View {
-        VStack(alignment: .leading) {
-            if let pic = video.pic{
-                let faceURL = "https:\(String(describing: pic))"
-                WebImage(url: URL(string: faceURL))
-                    .resizable()
-                    .indicator(.activity)
-                    .scaledToFit()
-                    .padding()
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.gray, lineWidth: 3)
-                    )
+        ZStack {
+            if isDarkMode {
+                Color.black.opacity(0.8)
+            } else {
+                Color.white.opacity(0.8)
             }
-            Text(video.title?.replacingOccurrences(of: "<em class=\"keyword\">", with: "").replacingOccurrences(of: "</em>", with: "") ?? "这个暂时不能被解析")
-                .font(.headline)
-                .bold()
-                .lineLimit(2)
-            Text("UP主：\(video.owner.name)")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+            VStack(alignment: .leading) {
+                if let pic = video.pic{
+                    let faceURL = "https:\(String(describing: pic))"
+                    WebImage(url: URL(string: faceURL))
+                        .resizable()
+                        .indicator(.activity)
+                        .scaledToFit()
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(isDarkMode ? Color.white:Color.black, lineWidth: 3)
+                        )
+                }
+                Text(video.title?.replacingOccurrences(of: "<em class=\"keyword\">", with: "").replacingOccurrences(of: "</em>", with: "") ?? "这个暂时不能被解析")
+                    .font(.headline)
+                    .bold()
+                    .lineLimit(2)
+                    .foregroundColor(isDarkMode ? .white:.black)
+                Text("UP主：\(video.owner.name)")
+                    .font(.subheadline)
+                    .foregroundColor(isDarkMode ? .white:.black)
             }
-            .padding(.vertical, 8)
+            .padding()
         }
+    }
 }
 
 struct SearchResultDetail: View {
     let video: SearchResult
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var consoleManager: ConsoleManager
     @ObservedObject var downloadManager = DownloadManager.shared
+    @State private var playerWrapper: PlayerWrapper?
     @State private var playerURL: URL?
+    @AppStorage("isPreVideoModeEnabled") private var isPreVideo: Bool = true
     
     var body: some View {
+        ZStack{
+            let showToast = downloadManager.showToast
             ZStack{
-                let showToast = downloadManager.showToast
-                ZStack{
-                    if showToast {
-                        VStack {
-                            Spacer()
-                            ToastView(message: "已添加到资料库")
-                                .padding()
-                                .cornerRadius(10)
-                                .shadow(radius: 10)
-                                .transition(.move(edge: .bottom))
-                                .animation(.easeInOut, value: showToast)
-                        }
-                        .padding(.bottom, 20)
-                    }
-                }
-                .zIndex(1)
-                .padding()
-                ZStack{
-                    VStack{
+                if showToast {
+                    VStack {
                         Spacer()
-                        DownloadView()
-                            .shadow(radius: 10)
-                    }
-                    .padding(.bottom, 0)
-                }
-                .zIndex(1)
-                .padding()
-                
-                ScrollView {
-                VStack(spacing: 16) {
-                    let faceURL = "https:\(String(describing: video.pic ?? ""))"
-                    NavigationLink(destination: ViewPicture(PicUrl: faceURL )) {
-                        WebImage(url: URL(string: faceURL))
-                            .resizable()
-                            .indicator(.activity)
-                            .scaledToFit()
+                        ToastView(message: "已添加到资料库")
                             .padding()
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 5)
-                                    .stroke(Color.gray, lineWidth: 3)
-                            )
-                    }.buttonStyle(PlainButtonStyle())
+                            .cornerRadius(10)
+                            .shadow(radius: 10)
+                            .transition(.move(edge: .bottom))
+                            .animation(.easeInOut, value: showToast)
+                    }
+                    .padding(.bottom, 20)
+                }
+            }
+            .zIndex(1)
+            .padding()
+            ZStack{
+                VStack{
+                    Spacer()
+                    DownloadView()
+                        .shadow(radius: 10)
+                }
+                .padding(.bottom, 0)
+            }
+            .zIndex(1)
+            .padding()
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    if let wrapper = playerWrapper {
+                        if isPreVideo {
+                            NavigationLink(destination: VideoPlayerView(playerWrapper: wrapper)) {
+                                VideoPlayerPreView(playerWrapper: wrapper)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .onAppear {
+                                wrapper.player.play()
+                            }
+                            .onDisappear() {
+                                wrapper.player.pause()
+                            }
+                        } else {
+                            NavigationLink(destination: VideoPlayerView(playerWrapper: wrapper)) {
+                                Text("点击播放")
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    } else {
+                        VStack(alignment: .center) {
+                            ProgressView("加载视频中...")
+                                .padding()
+                            Text("如果视频一直没加载出来")
+                            Text("请检查是否登录")
+                        }
+                    }
                     Text(video.title?.replacingOccurrences(of: "<em class=\"keyword\">", with: "").replacingOccurrences(of: "</em>", with: "") ?? "")
                         .font(.title3)
                         .fontWeight(.bold)
@@ -1034,23 +1438,27 @@ struct SearchResultDetail: View {
                             .padding(.leading, 8)
                         Spacer()
                         
-                        if let playerURL = playerURL{
-                            NavigationLink(destination: VideoPlayerView(videoURL: playerURL)) {
-                                Text("播放视频")
-                                    .padding(.horizontal, 30)
-                                    .padding(.vertical, 5)
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .fontWeight(.bold)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.orange)
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
+                        let faceURL = "https:\(String(describing: video.pic ?? ""))"
+                        NavigationLink(destination: ViewPicture(PicUrl: faceURL )) {
+                            Text("封面图片")
+                                .padding(.horizontal, 30)
+                                .padding(.vertical, 5)
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color.blue)
+                                )
+                        }.buttonStyle(PlainButtonStyle())
+                        
                         
                         Button(action: {
-                            detectVideoIDType(video.bvid ?? "666666",videoName: video.title?.replacingOccurrences(of: "<em class=\"keyword\">", with: "").replacingOccurrences(of: "</em>", with: "") ?? "")
+                            if let wrapper = playerWrapper{
+                                wrapper.player.pause()
+                            }
+                            Task{
+                                await detectVideoIDType(video.bvid ?? "666666",videoName: video.title?.replacingOccurrences(of: "<em class=\"keyword\">", with: "").replacingOccurrences(of: "</em>", with: "") ?? "")
+                            }
                         }) {
                             Text("下载视频")
                                 .padding(.horizontal, 30)
@@ -1063,43 +1471,79 @@ struct SearchResultDetail: View {
                                 )
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .disabled(DownloadManager().isDownloading)
+                        .disabled(DownloadManager.shared.isDownloading)  // 使用共享的 DownloadManager 判断是否在下载中
+                        
                     }
                     .padding(.horizontal)
                 }
             }
-            .navigationTitle("视频详情")
-            }.onAppear{
-                if let name = video.title{
-                    if let bvid = video.bvid{
-                        detectOnlineVideoIDType(bvid, videoName: name){ videoURL in
-                            if let videoURL = videoURL{
-                                print(videoURL)
-                                self.playerURL = videoURL
-                            }
+        }.onAppear {
+            if playerWrapper == nil {
+                detectOnlineVideoIDType(video.bvid ?? "666666", videoName: video.title ?? "Cindy") { videoURL in
+                    if let videoURL = videoURL {
+                        print(videoURL)
+                        DispatchQueue.main.async {
+                            GlobalVideoPlayer.shared.setVideoURL(videoURL)
+                            let headers = [
+                                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+                                "Referer": "https://www.bilibili.com/"
+                            ]
+                            self.playerWrapper = PlayerWrapper(player: GlobalVideoPlayer.shared.currentPlayer, headers: headers)
                         }
                     }
+                }
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) { // 左上角
+                Button(action: {
+                    if let wrapper = playerWrapper {
+                        wrapper.player.replaceCurrentItem(with: nil)
+                    }
+                    dismiss()
+                }){
+                    Image(systemName: "arrow.down.left.topright.rectangle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .padding(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            if let url = URL(string: "https://www.bilibili.com/video/\(video.bvid)") {
+                ToolbarItem(placement: .confirmationAction) {
+                    ShareLink(item: url) {
+                        Label("分享", systemImage: "square.and.arrow.up.fill")
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
             }
         }
     }
 }
 
 struct VideoSearchDetialIndex: View {
+    @AppStorage("isConsoleManagerEnabled") private var isConsoleManagerEnabled: Bool = true
     @StateObject var consoleManager = ConsoleManager()  // 共享日志管理器
     let video: SearchResult
     
     var body: some View {
         TabView {
             SearchResultDetail(video: video, consoleManager: consoleManager)
-            .tabItem {
-                Label("首页", systemImage: "message")
+                .tabItem {
+                    Label("首页", systemImage: "message")
+                }
+            if isConsoleManagerEnabled {
+                ConsoleView(consoleManager: consoleManager)
+                    .tabItem {
+                        Label("日志", systemImage: "terminal")
+                    }
+                    .toolbar(.hidden, for: .navigationBar)
             }
-            ConsoleView(consoleManager: consoleManager)
-            .tabItem {
-                Label("日志", systemImage: "terminal")
-            }
-            .toolbar(.hidden, for: .navigationBar)
-        }.onAppear {
+        }
+        .onAppear {
             // 将共享的 consoleManager 传入 DownloadManager
             DownloadManager.shared.consoleManager = consoleManager
         }
@@ -1110,7 +1554,9 @@ struct VideoSearchDetialIndex: View {
 struct BiliLoginView: View {
     @StateObject private var loginManager = BiliLoginManager()
     @State private var existingLogin: Bool = false
+    @State private var isConnected: Bool = false
     @State private var storedCookies: String = ""
+    @StateObject private var networkMonitor = NetworkMonitor.shared
 
     var body: some View {
         ScrollView {
@@ -1175,33 +1621,35 @@ struct BiliLoginView: View {
                 }
             }
         }
-        .onAppear {
-            checkExistingLogin()
-        }
         .onDisappear {
             loginManager.stopPolling()
         }
     }
 
     private func checkExistingLogin() {
-        if let sessdata = UserDefaults.standard.string(forKey: "SESSDATA"),
-           let bili_jct = UserDefaults.standard.string(forKey: "bili_jct"),
-           let dedeUserID = UserDefaults.standard.string(forKey: "DedeUserID"),
-           let dedeUserID_ckMd5 = UserDefaults.standard.string(forKey: "DedeUserID__ckMd5") {
-            
-            storedCookies = "DedeUserID=\(dedeUserID)\nDedeUserID__ckMd5=\(dedeUserID_ckMd5)\nSESSDATA=\(sessdata)\nbili_jct=\(bili_jct)"
-            existingLogin = true
-
-            validateCookie { isValid in
-                DispatchQueue.main.async {
-                    if !isValid {
-                        print("Cookie 已失效，重新登录")
-                        logout()
+        if networkMonitor.isConnected {
+            print("登录有网络")
+            if let sessdata = UserDefaults.standard.string(forKey: "SESSDATA"),
+               let bili_jct = UserDefaults.standard.string(forKey: "bili_jct"),
+               let dedeUserID = UserDefaults.standard.string(forKey: "DedeUserID"),
+               let dedeUserID_ckMd5 = UserDefaults.standard.string(forKey: "DedeUserID__ckMd5") {
+                
+                storedCookies = "DedeUserID=\(dedeUserID)\nDedeUserID__ckMd5=\(dedeUserID_ckMd5)\nSESSDATA=\(sessdata)\nbili_jct=\(bili_jct)"
+                existingLogin = true
+                
+                validateCookie { isValid in
+                    DispatchQueue.main.async {
+                        if !isValid {
+                            print("Cookie 已失效，重新登录")
+                            logout()
+                        }
                     }
                 }
+            } else {
+                loginManager.fetchQRCode()
             }
         } else {
-            loginManager.fetchQRCode()
+            print("登录无网络连接")
         }
     }
 
@@ -1390,7 +1838,9 @@ func detectVideoIDType(_ id: String,videoName: String) {
             if let videoURL = videoURL {
                 print("视频播放地址: \(videoURL)")
                 DispatchQueue.main.async {
-                    DownloadManager.shared.startDownload(videoURL: videoURL,videoName: videoName.replacingOccurrences(of: "/", with: " "))  // 开始下载
+                    Task{
+                        await DownloadManager.shared.startDownload(videoURL: videoURL,videoName: videoName.replacingOccurrences(of: "/", with: " "))  // 开始下载
+                    }
                 }
             } else {
                 print("无法获取播放地址")
@@ -1401,7 +1851,9 @@ func detectVideoIDType(_ id: String,videoName: String) {
             if let videoURL = videoURL {
                 print("视频播放地址: \(videoURL)")
                 DispatchQueue.main.async {
-                    DownloadManager.shared.startDownload(videoURL: videoURL,videoName: videoName)  // 开始下载
+                    Task{
+                        await DownloadManager.shared.startDownload(videoURL: videoURL,videoName: videoName.replacingOccurrences(of: "/", with: " "))  // 开始下载
+                    }
                 }
             } else {
                 print("无法获取播放地址")
@@ -1511,23 +1963,25 @@ func fetchVideoURL(id: String, isBvid: Bool, completion: @escaping (URL?) -> Voi
 }
 
 // MARK: - 下载管理器
-class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
+class DownloadManager: NSObject, ObservableObject, URLSessionDelegate, URLSessionDownloadDelegate {
     static let shared = DownloadManager()
     @Published var showToast = false
     var consoleManager: ConsoleManager?
     @Published var downloadProgress: Float = 0.0
+    @Published var totalBytes: Int64 = 0  // 总字节数
+    @Published var downloadedBytes: Int64 = 0  // 已下载字节数
     private var downloadTask: URLSessionDownloadTask?
     private var session: URLSession!
     var isDownloading: Bool = false
     var videoName: String = "Video"
     var message: String = ""
-
+    
     override init() {
         super.init()
         session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
     }
 
-    func startDownload(videoURL: URL,videoName: String) {
+    func startDownload(videoURL: URL, videoName: String) {
         print("开始下载: \(videoURL)")
         self.message = "开始下载: \(videoURL)"
         self.consoleManager?.addLog("开始下载: \(videoURL)")
@@ -1536,24 +1990,44 @@ class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
 
         // 如果有正在进行的下载，先取消
         downloadTask?.cancel()
-        
+
         var request = URLRequest(url: videoURL)
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)", forHTTPHeaderField: "User-Agent")
         request.addValue("https://www.bilibili.com/", forHTTPHeaderField: "Referer")
-        
+
+        // 发起下载任务
         downloadTask = session.downloadTask(with: request)
         downloadTask?.resume()
+
+        print("下载任务已开始")
+    }
+
+    // 取消下载
+    func cancelDownload() {
+        downloadTask?.cancel()
+        downloadTask = nil
+        print("下载已取消")
+        self.isDownloading = false
+        self.downloadProgress = 0.0
+        DispatchQueue.main.async {
+            self.showToast = false
+        }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        // 在主线程更新 UI
         DispatchQueue.main.async {
-            self.isDownloading = true
             self.downloadProgress = Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
+            self.downloadedBytes = totalBytesWritten
+            self.totalBytes = totalBytesExpectedToWrite
             print("下载进度: \(Int(self.downloadProgress * 100))%")
         }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        print("下载完成，文件已下载到: \(location)")
+
+        // 将下载文件移到目标位置
         let fileManager = FileManager.default
         let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
         let destinationURL = documentsURL.appendingPathComponent("\(videoName).mp4")
@@ -1562,9 +2036,8 @@ class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
             if fileManager.fileExists(atPath: destinationURL.path) {
                 try fileManager.removeItem(at: destinationURL)
             }
-
             try fileManager.moveItem(at: location, to: destinationURL)
-            print("视频已保存: \(destinationURL)")
+            print("视频已保存到: \(destinationURL)")
             self.consoleManager?.addLog("视频已保存: \(destinationURL)")
             message = "视频已保存:\(videoName).mp4"
             WKInterfaceDevice.current().play(.success)
@@ -1572,7 +2045,6 @@ class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
             DispatchQueue.main.async {
                 self.downloadProgress = 0.0  // 重置进度
                 self.isDownloading = false
-                
                 withAnimation {
                     self.showToast = true
                 }
@@ -1582,15 +2054,11 @@ class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
                         self.showToast = false
                     }
                 }
-                // 通知 InterfaceController 更新视频 URL
-                //if let interfaceController = WKInterfaceController.current() as? InterfaceController {
-                    //interfaceController.updateVideoURL(url: destinationURL)
-                //}
             }
         } catch {
-            print("文件移动失败: \(error.localizedDescription)")
-            message = "文件移动失败: \(error.localizedDescription)"
-            self.consoleManager?.addLog("文件移动失败: \(error.localizedDescription)")
+            print("文件保存失败: \(error.localizedDescription)")
+            message = "文件保存失败: \(error.localizedDescription)"
+            self.consoleManager?.addLog("文件保存失败: \(error.localizedDescription)")
             WKInterfaceDevice.current().play(.failure)
             self.isDownloading = false
         }
@@ -1598,7 +2066,7 @@ class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFailWithError error: Error) {
         print("下载失败: \(error.localizedDescription)")
-        message = "下载失败: \(error.localizedDescription)"
+        self.message = "下载失败: \(error.localizedDescription)"
         self.consoleManager?.addLog("下载失败: \(error.localizedDescription)")
         WKInterfaceDevice.current().play(.failure)
         DispatchQueue.main.async {
@@ -1607,34 +2075,66 @@ class DownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
         }
     }
 }
+
+
 // MARK: - 下载 UI
 struct DownloadView: View {
     @StateObject private var downloadManager = DownloadManager.shared
     @State private var downloadedFileURL: URL?
-
+    
     var body: some View {
-        VStack {
-            if downloadManager.isDownloading == true {
-                VStack{
-                    Text("下载视频：\(downloadManager.videoName)")
-                        .font(.footnote)
+        if downloadManager.isDownloading == true {
+            ScrollView{
+                Text("下载专注模式")
+                    .font(.footnote)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.red)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)  // 允许多行显示
+                
+                Text("下载视频：\(downloadManager.videoName)")
+                    .font(.footnote)
+                    .fontWeight(.bold)
+                    .lineLimit(nil)  // 允许多行显示
+                
+                ProgressView(value: downloadManager.downloadProgress)
+                    .progressViewStyle(LinearProgressViewStyle())
+                    .frame(width: 150)
+                
+                Text("下载进度: \(Int(downloadManager.downloadProgress * 100))%")
+                    .fontWeight(.bold)
+                    .font(.footnote)
+                    .lineLimit(nil)  // 允许多行显示
+                
+                // 显示总字节数和已下载字节数
+                Text("\(ByteCountFormatter.string(fromByteCount: downloadManager.downloadedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: downloadManager.totalBytes, countStyle: .file))")
+                    .font(.footnote)
+                    .padding(.top, 5)
+                    .lineLimit(nil)  // 允许多行显示
+                // 取消下载按钮
+                Button(action: {
+                    downloadManager.cancelDownload()
+                }) {
+                    Text("取消下载")
+                        .padding(.horizontal, 15)
+                        .padding(.vertical,5)
+                        .foregroundColor(.white)
                         .fontWeight(.bold)
-                    ProgressView(value: downloadManager.downloadProgress)
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .frame(width: 150)
-                    Text("下载进度: \(Int(downloadManager.downloadProgress * 100))%")
-                        .fontWeight(.bold)
-                        .font(.footnote)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.red.opacity(0.6))
+                        )
                 }
-                .padding(.vertical,5)
-                .padding(.horizontal,5)
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(10)
+                .buttonStyle(PlainButtonStyle())
             }
-            
+            .ignoresSafeArea()
+            .padding(.vertical, 5)
+            .padding(.horizontal, 5)
+            .background(Color.black.opacity(0.3))
+            .cornerRadius(10)
+            .frame(width: 180)
+            .padding()
         }
-        .frame(maxWidth:100)
-        .padding()
     }
 }
 
@@ -1646,29 +2146,15 @@ struct VideoListView: View {
     var body: some View {
         List {
             ForEach(videos, id: \.self) { video in
-                NavigationLink(destination: VideoPlayerView(videoURL: video)) {
+                NavigationLink(destination: VideoPlayerDownloadedView(videoURL: video)) {
                     Text(video.lastPathComponent)
                         .fontWeight(.bold)
-                        .multilineTextAlignment(.leading)
-                    NavigationLink(
-                        destination: VideoMusicPlayerView(video: video),
-                        tag: video,
-                        selection: $selectedVideo
-                    ) {
-                        HStack {
-                            Image(systemName: "speaker.wave.2.fill")
-                                .foregroundColor(.blue)
-                        }
-                        .frame(width: 20, height: 20, alignment: .trailing)
-                        .swipeActions(edge: .leading){
-                            Button {
-                                selectedVideo = video // 选中当前视频，触发跳转
-                            } label: {
-                                Image(systemName: "speaker.wave.2.fill")
-                                    .foregroundColor(.blue)
-                            }
-                        }.tint(.blue)
-                    }
+                }
+                .swipeActions(edge: .leading){
+                    NavigationLink(destination: VideoMusicPlayerView(video: video)){
+                        Image(systemName: "speaker.wave.2.fill")
+                    }.tint(.blue)
+                    
                 }
             }
             .onDelete(perform: deleteVideo)
@@ -1710,13 +2196,13 @@ struct VideoListView: View {
     }
 }
 
-
 func setupAudioSession() {
     do {
-        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-        try AVAudioSession.sharedInstance().setActive(true)
+        let audioSession = AVAudioSession.sharedInstance()
+        try audioSession.setCategory(.playback, mode: .default)
+        try audioSession.setActive(true)
     } catch {
-        print("Audio session setup failed: \(error)")
+        print("设置音频会话失败: \(error)")
     }
 }
 
@@ -1896,53 +2382,55 @@ struct NowPlayingView: View {
     @State private var videoTitle: String = "未知视频"
 
     var body: some View {
-        VStack(spacing: 10) {
-            Text(videoTitle)
-                .font(.headline)
-                .padding()
-            
-            // 播放进度条
-            Slider(value: Binding(
-                get: { self.currentTime },
-                set: { newValue in
-                    self.currentTime = newValue
-                    playerManager.currentPlayer?.seek(to: CMTime(seconds: newValue, preferredTimescale: 600))
-                }
-            ), in: 0...duration)
-            .padding(.horizontal)
-            
-            // 时间显示
-            HStack {
-                Text(formatTime(currentTime))
-                Spacer()
-                Text(formatTime(duration))
-            }
-            .padding(.horizontal)
-            
-            // 播放/暂停按钮
-            HStack{
-                Button(action: {
-                    if isPlaying {
-                        playerManager.currentPlayer?.pause()
-                    } else {
-                        playerManager.currentPlayer?.play()
+        ScrollView{
+            VStack(spacing: 10) {
+                Text(videoTitle)
+                    .font(.headline)
+                    .padding()
+                
+                // 播放进度条
+                Slider(value: Binding(
+                    get: { self.currentTime },
+                    set: { newValue in
+                        self.currentTime = newValue
+                        playerManager.currentPlayer?.seek(to: CMTime(seconds: newValue, preferredTimescale: 600))
                     }
-                    isPlaying.toggle()
-                }) {
-                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.largeTitle)
+                ), in: 0...duration)
+                .padding(.horizontal)
+                
+                // 时间显示
+                HStack {
+                    Text(formatTime(currentTime))
+                    Spacer()
+                    Text(formatTime(duration))
                 }
-                .buttonStyle(PlainButtonStyle())
-                VolumeControlView()
+                .padding(.horizontal)
+                
+                // 播放/暂停按钮
+                HStack{
+                    Button(action: {
+                        if isPlaying {
+                            playerManager.currentPlayer?.pause()
+                        } else {
+                            playerManager.currentPlayer?.play()
+                        }
+                        isPlaying.toggle()
+                    }) {
+                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                            .font(.largeTitle)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    VolumeControlView()
+                }
             }
-        }
-        .onAppear {
-            setupPlayer()
-        }
-        .onDisappear {
-            if let token = timeObserverToken {
-                playerManager.currentPlayer?.removeTimeObserver(token)
-                timeObserverToken = nil
+            .onAppear {
+                setupPlayer()
+            }
+            .onDisappear {
+                if let token = timeObserverToken {
+                    playerManager.currentPlayer?.removeTimeObserver(token)
+                    timeObserverToken = nil
+                }
             }
         }
     }
@@ -1980,25 +2468,74 @@ struct NowPlayingView: View {
     }
 }
 
-class PlayerWrapper: ObservableObject {
+struct NowPlayingPreView: View {
+    @ObservedObject var playerManager = GlobalMusicPlayer.shared  // 监听全局播放器
+    @State private var currentTime: Double = 0
+    @State private var totalDuration: Double = 1  // 避免除零错误
+    @State private var timeObserverToken: Any?
+
+    var body: some View {
+        ZStack{
+            Circle()
+                .stroke(Color.gray.opacity(0.3), lineWidth: 8)
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Circle()
+                        .trim(from: 0, to: CGFloat(self.currentTime / self.totalDuration)) // 归一化
+                        .stroke(Color.blue,style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                )
+                .padding()
+                .onAppear {
+                    setupPlayer() // 确保注册时间观察者
+                }
+            // 播放图标
+            Image(systemName: "play.circle.fill") // SF Symbols 播放图标
+                .resizable()
+                .scaledToFit()
+                .frame(width: 22, height: 22) // 图标大小
+                .foregroundColor(.blue.opacity(0.8)) // 颜色
+        }
+    }
+
+    private func setupPlayer() {
+        guard let player = playerManager.currentPlayer,
+              let duration = player.currentItem?.asset.duration.seconds,
+              duration > 0 else { return }
+
+        totalDuration = duration // 记录总时长
+
+        // 监听时间更新
+        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+            DispatchQueue.main.async {
+                self.currentTime = time.seconds // 绑定播放时间
+            }
+        }
+    }
+}
+class LocalPlayerWrapper: ObservableObject {
     @Published var player: AVPlayer
-    
-    init(url: URL, headers: [String: String]) {
-        let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+
+    init(url: URL, headers: [String: String] = [:]) {
+        self.player = AVPlayer() // 初始化播放器
+
+        // 使用本地视频路径初始化 AVPlayerItem
+        let asset = AVURLAsset(url: url)
         let playerItem = AVPlayerItem(asset: asset)
-        self.player = AVPlayer(playerItem: playerItem)
-        for format in asset.tracks(withMediaType: .video) {
-            print("分辨率: \(format.naturalSize), 码率: \(format.estimatedDataRate)")
+
+        DispatchQueue.main.async {
+            self.player.replaceCurrentItem(with: playerItem) // 加载视频到播放器
         }
     }
 }
 
-struct VideoPlayerView: View {
+struct VideoPlayerDownloadedView: View {
     let videoURL: URL
     @State private var isLandscape = false      // 控制视频是否旋转（横屏效果）
     @State private var showOptions = false        // 控制是否显示选项界面
     @State private var player = AVPlayer()        // 播放器实例
-    @StateObject private var playerWrapper: PlayerWrapper
+    @StateObject private var playerWrapper: LocalPlayerWrapper
     @Environment(\.presentationMode) var presentationMode  // 用于退出页面
 
     init(videoURL: URL) {
@@ -2007,28 +2544,31 @@ struct VideoPlayerView: View {
             "Referer": "https://www.bilibili.com/"
         ]
             self.videoURL = videoURL
-            _playerWrapper = StateObject(wrappedValue: PlayerWrapper(url: videoURL, headers: headers))
+        _playerWrapper = StateObject(wrappedValue: LocalPlayerWrapper(url: videoURL, headers: headers))
         }
-    
+
     var body: some View {
         ZStack {
             let width = WKInterfaceDevice.current().screenBounds.width
             let height = WKInterfaceDevice.current().screenBounds.height
+            
             VideoPlayer(player: playerWrapper.player)
                 .ignoresSafeArea(.all)
                 .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
-                .aspectRatio(contentMode: .fill)
-                .position(x: width / 2, y: height / 2)
+                .aspectRatio(contentMode: isLandscape ? .fill : .fit)
+                .position(x: isLandscape ? width / 2 + 15 : width / 2, y: height / 2)
                 .clipped()
-                .frame(
-                    width: WKInterfaceDevice.current().screenBounds.width,
-                    height: WKInterfaceDevice.current().screenBounds.height
-                )
+                .frame(width: width, height: height)
+                .navigationBarBackButtonHidden(true)
+                .ignoresSafeArea(.all)
                 .onAppear {
                     playerWrapper.player.play()
                 }
-            
-            // 手势直接绑定在 VideoPlayer 上，方向判断根据当前旋转状态不同
+                .onDisappear {
+                    // 离开时释放视频资源
+                    playerWrapper.player.pause()
+                    playerWrapper.player.replaceCurrentItem(with: nil)
+                }
                 .gesture(
                     DragGesture(minimumDistance: 20)
                         .onEnded { value in
@@ -2053,19 +2593,17 @@ struct VideoPlayerView: View {
                 .ignoresSafeArea(.all)
             // 右侧（或横屏时的底部）选项菜单
             if showOptions {
-                // 使用 Group 包裹菜单视图，方便后续统一应用旋转
                 Group {
                     HStack(spacing: 12) {
-                        // 旋转按钮：点击后切换横屏/竖屏状态
                         Button(action: {
                             withAnimation {
                                 isLandscape.toggle()
                                 showOptions = false
                             }
+                            playerWrapper.player.play()
                         }) {
                             Label("旋转", systemImage: "rotate.right")
                         }
-                        // 返回按钮：点击后退出播放器界面
                         Button(action: {
                             withAnimation { showOptions = false }
                             presentationMode.wrappedValue.dismiss()
@@ -2079,12 +2617,9 @@ struct VideoPlayerView: View {
                     .cornerRadius(8)
                     .zIndex(1)
                 }
-                // 根据是否横屏调整菜单的位置
                 .padding(isLandscape ? .bottom : .trailing, 10)
                 .padding(isLandscape ? .leading : .top, 50)
-                // 当横屏时，菜单从底部滑入；否则从右侧滑入
                 .transition(.move(edge: isLandscape ? .top : .leading))
-                // **关键**：当横屏时，将菜单也旋转 90°，使按钮方向与视频保持一致
                 .rotationEffect(isLandscape ? .degrees(90) : .degrees(0))
             }
         }

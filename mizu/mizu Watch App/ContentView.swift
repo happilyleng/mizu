@@ -422,13 +422,55 @@ struct VideoPlayerPreView: View {
 // 视频预览（复用共享的播放器实例）
 struct VideoNowPlayerView: View {
     @StateObject private var playerWrapper = GlobalVideoPlayer.shared  // 使用 @StateObject 绑定单例实例
+    @State private var hidden:Bool = false
     
     var body: some View {
-        ZStack {
-            VideoPlayer(player: playerWrapper.currentPlayer)
-                .frame(minWidth: 0, maxWidth: 100, minHeight: 0, maxHeight: 60)
-                .aspectRatio(contentMode: .fill)
+        let width = WKInterfaceDevice.current().screenBounds.width
+        let height = WKInterfaceDevice.current().screenBounds.height
+        VStack{
+            HStack {
+                VideoPlayer(player: playerWrapper.currentPlayer)
+                    .cornerRadius(10)
+                    .frame(minWidth: 0, maxWidth: 100, minHeight: 0, maxHeight: 60)
+                    .aspectRatio(contentMode: .fill)
+                VStack{
+                    Button(action:{
+                        print("触发隐藏")
+                        withAnimation{
+                            hidden.toggle()
+                        }
+                    }){
+                        Image(systemName: hidden ? "chevron.right.circle.fill":"chevron.left.circle.fill")
+                            .background(
+                                Color.gray.opacity(0.6)
+                                    .cornerRadius(8)
+                                .frame(width: 30,height: 60)
+                            )
+                            .padding(0)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 40,height: 20)
+                }
+            }
+            Spacer()
+            Button(action:{playerWrapper.currentPlayer.replaceCurrentItem(with: nil)}){
+                HStack{
+                    Image(systemName: "xmark.circle.fill")
+                    Text("清除视频")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                    
+                }
+                .background(
+                    Color.gray.opacity(0.6)
+                        .cornerRadius(8)
+                        .frame(width: 80,height: 25)
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
         }
+        .frame(minHeight: 0,maxHeight: 60)
+        .position(x:hidden ? -55 : 70,y:height/4*2)
         .onAppear {
             // 确保播放器准备好后再播放
             if playerWrapper.currentPlayer.currentItem?.status == .readyToPlay {
@@ -577,6 +619,7 @@ struct GlobalSettingsView: View {
                 Toggle(isOn: $isPreVideoModeEnabled){
                     HStack{
                         Text("启用显示视频预览模式")
+                            .fontWeight(.bold)
                         Spacer()
                         Image(systemName: "video.fill")
                     }
@@ -585,6 +628,7 @@ struct GlobalSettingsView: View {
                 Toggle(isOn: $isConsoleManagerEnabled){
                     HStack{
                         Text("启用显示应用实时日志")
+                            .fontWeight(.bold)
                         Spacer()
                         Image(systemName: "terminal.fill")
                     }
@@ -593,6 +637,7 @@ struct GlobalSettingsView: View {
                 Toggle(isOn: $isDarkMode){
                     HStack{
                         Text("启用应用的黑色调模式")
+                            .fontWeight(.bold)
                         Spacer()
                         Image(systemName: isDarkMode ? "lightbulb":"lightbulb.fill")
                     }
@@ -601,6 +646,7 @@ struct GlobalSettingsView: View {
                 Toggle(isOn: $isSmallVideo){
                     HStack{
                         Text("启用应用的画中画模式")
+                            .fontWeight(.bold)
                         Spacer()
                         Image(systemName: "inset.filled.bottomleft.rectangle")
                     }
@@ -819,11 +865,10 @@ struct VideoDetail: View {
     @ObservedObject var downloadManager = DownloadManager.shared
     @State private var playerURL: URL?
     @State private var playerWrapper: PlayerWrapper?
+    @StateObject private var players = GlobalVideoPlayer.shared  // 使用 @StateObject 绑定单例实例
     let width = WKInterfaceDevice.current().screenBounds.width
     let height = WKInterfaceDevice.current().screenBounds.height
     @AppStorage("isSmallVideo") private var isSmallVideo: Bool = false
-    @State private var isv: Bool = false
-
     @State private var isloading: Bool = false
 
     var body: some View {
@@ -974,10 +1019,6 @@ struct VideoDetail: View {
                     }
                     .frame(maxWidth: width)
                     .onAppear {
-                        isv = isSmallVideo
-                        if isSmallVideo{
-                            isSmallVideo = false
-                        }
                         if playerWrapper == nil {
                             detectOnlineVideoIDType(video.bvid, videoName: video.title) { videoURL in
                                 if let videoURL = videoURL {
@@ -1000,8 +1041,7 @@ struct VideoDetail: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { // 左上角
                 Button(action: {
-                    if isv {
-                        isSmallVideo = true
+                    if isSmallVideo {
                         dismiss()
                     } else {
                         if let wrapper = playerWrapper {
@@ -1010,7 +1050,7 @@ struct VideoDetail: View {
                         dismiss()
                     }
                 }){
-                    Image(systemName: "arrow.down.left.topright.rectangle.fill")
+                    Image(systemName: isSmallVideo ? "arrow.down.left.topright.rectangle.fill":"xmark.circle.fill")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)
@@ -1368,6 +1408,7 @@ struct SearchResultDetail: View {
     @State private var playerWrapper: PlayerWrapper?
     @State private var playerURL: URL?
     @AppStorage("isPreVideoModeEnabled") private var isPreVideo: Bool = true
+    @AppStorage("isSmallVideo") private var isSmallVideo: Bool = false
     
     var body: some View {
         ZStack{
@@ -1498,12 +1539,16 @@ struct SearchResultDetail: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { // 左上角
                 Button(action: {
-                    if let wrapper = playerWrapper {
-                        wrapper.player.replaceCurrentItem(with: nil)
+                    if isSmallVideo {
+                        dismiss()
+                    } else {
+                        if let wrapper = playerWrapper {
+                            wrapper.player.replaceCurrentItem(with: nil)
+                        }
+                        dismiss()
                     }
-                    dismiss()
                 }){
-                    Image(systemName: "arrow.down.left.topright.rectangle.fill")
+                    Image(systemName: isSmallVideo ? "arrow.down.left.topright.rectangle.fill":"xmark.circle.fill")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)
@@ -1559,65 +1604,84 @@ struct BiliLoginView: View {
     @StateObject private var networkMonitor = NetworkMonitor.shared
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                if existingLogin {
-                    Text("已登录")
-                        .font(.title)
-                        .foregroundColor(.green)
-
-                    Text("当前 Cookie:")
-                        .font(.headline)
-                        .padding(.top, 10)
-                    
-                    Text(storedCookies)
-                        .font(.footnote)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-
-                    Button("退出登录") {
-                        logout()
-                    }
-                    .padding(.horizontal,40)
-                    .padding(.vertical,8)
-                    .background(Color.red.opacity(0.2))
-                    .foregroundColor(.white.opacity(0.3))
-                    .cornerRadius(10)
-                    .buttonStyle(PlainButtonStyle())
-
-                } else {
-                    if loginManager.isLoggedIn {
-                        Text("登录成功!")
-                            .font(.title)
-                            .foregroundColor(.green)
-                    } else {
-                        VStack {
-                            if let qrImage = generateQRCode(from: loginManager.qrCodeURL) {
-                                NavigationLink(destination: ViewQrcode(PicUrl: qrImage)){
-                                    Image(uiImage: qrImage)
-                                        .resizable()
-                                        .interpolation(.none)
-                                        .scaledToFit()
-                                        .frame(width: 150, height: 150)
-                                }.buttonStyle(PlainButtonStyle())
-                            } else {
-                                Text("生成二维码失败")
-                                    .foregroundColor(.red)
-                            }
+        ZStack{
+            if isConnected {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        if existingLogin {
+                            Text("已登录")
+                                .font(.title)
+                                .foregroundColor(.green)
                             
-                            Button("刷新二维码") {
-                                loginManager.fetchQRCode()
+                            Text("当前 Cookie:")
+                                .font(.headline)
+                                .padding(.top, 10)
+                            
+                            Text(storedCookies)
+                                .font(.footnote)
+                                .padding()
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(8)
+                                .padding(.horizontal)
+                            
+                            Button("退出登录") {
+                                logout()
                             }
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
+                            .padding(.horizontal,40)
+                            .padding(.vertical,8)
+                            .background(Color.red.opacity(0.2))
+                            .foregroundColor(.white.opacity(0.3))
                             .cornerRadius(10)
                             .buttonStyle(PlainButtonStyle())
+                            
+                        } else {
+                            if loginManager.isLoggedIn {
+                                Text("登录成功!")
+                                    .font(.title)
+                                    .foregroundColor(.green)
+                            } else {
+                                VStack {
+                                    if let qrImage = generateQRCode(from: loginManager.qrCodeURL) {
+                                        NavigationLink(destination: ViewQrcode(PicUrl: qrImage)){
+                                            Image(uiImage: qrImage)
+                                                .resizable()
+                                                .interpolation(.none)
+                                                .scaledToFit()
+                                                .frame(width: 150, height: 150)
+                                        }.buttonStyle(PlainButtonStyle())
+                                    } else {
+                                        Text("生成二维码失败")
+                                            .foregroundColor(.red)
+                                    }
+                                    
+                                    Button("刷新二维码") {
+                                        loginManager.fetchQRCode()
+                                    }
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                                .padding()
+                            }
                         }
-                        .padding()
                     }
+                }
+            }
+            else {
+                Text("请检查网络连接")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.red)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .onAppear{
+            checkNetworkConnection { isConnected in
+                self.isConnected = isConnected
+                if isConnected == true {
+                    checkExistingLogin() // 确保网络状态更新后才执行
                 }
             }
         }
@@ -1627,7 +1691,7 @@ struct BiliLoginView: View {
     }
 
     private func checkExistingLogin() {
-        if networkMonitor.isConnected {
+        if isConnected {
             print("登录有网络")
             if let sessdata = UserDefaults.standard.string(forKey: "SESSDATA"),
                let bili_jct = UserDefaults.standard.string(forKey: "bili_jct"),
@@ -1653,6 +1717,25 @@ struct BiliLoginView: View {
         }
     }
 
+    private func checkNetworkConnection(completion: @escaping (Bool) -> Void) {
+        let url = URL(string: "https://www.apple.com")!
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("网络连接失败: \(error.localizedDescription)")
+                    completion(false)
+                } else if let response = response as? HTTPURLResponse, response.statusCode == 200 {
+                    print("网络已连接")
+                    completion(true)
+                } else {
+                    print("网络不可达，状态码：\(response as? HTTPURLResponse)?.statusCode ?? 0")
+                    completion(false)
+                }
+            }
+        }
+        task.resume()
+    }
+    
     private func validateCookie(completion: @escaping (Bool) -> Void) {
         guard let url = URL(string: "https://api.bilibili.com/x/web-interface/nav") else {
             completion(false)
@@ -2379,7 +2462,7 @@ struct NowPlayingView: View {
     @State private var duration: Double = 1  // 避免除 0
     @State private var timeObserverToken: Any?
     @State private var isPlaying: Bool = false
-    @State private var videoTitle: String = "未知视频"
+    @State private var videoTitle: String = "无视频在播放"
 
     var body: some View {
         ScrollView{
@@ -2494,7 +2577,7 @@ struct NowPlayingPreView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 22, height: 22) // 图标大小
-                .foregroundColor(.blue.opacity(0.8)) // 颜色
+                .foregroundColor(.purple.opacity(0.8)) // 颜色
         }
     }
 
